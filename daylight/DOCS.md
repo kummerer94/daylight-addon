@@ -170,6 +170,7 @@ On a PC, the server uses about 130 MB at rest and about 160 MB under heavy synth
 - Large photos are made smaller on the phone before upload (2048 px, JPEG). A file can have at most 10 MB; a message can have 5 files.
 - A scanned PDF without text cannot be read. Send photos of the pages instead.
 - Files are stored in `/data/attachments`, so backups include them. Only the profile that sent a file can see it.
+- **Add photo** puts photos into the note of a Groceries or Chores item, or into a Markdown document. The iPhone offers the camera and the photo library. Everybody who can see the item or the document sees its photos. Photos are in `/data/attachments` too, so backups include them.
 
 ## Known limits
 

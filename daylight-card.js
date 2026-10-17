@@ -1,3 +1,14 @@
+/** Card answers never render HTML or image Markdown. The Open button opens Daylight. */
+export function cardAnswerText(text) {
+  return text
+    .replace(
+      /!\[([^\]\n]*)\]\(\s*<?(?:\.\/)?api\/attachments\/[0-9a-f-]+\/content>?[^\n)]*\)/g,
+      (_, alt) => `${alt || "Photo"} (open in Daylight)`,
+    )
+    .replace(/!\[([^\]\n]*)\](?:\([^\n]*?\)|\[[^\]\n]*\])?/g, "$1")
+    .replace(/<img\b[^>]*>/gi, "");
+}
+
 // Daylight card for Home Assistant dashboards (Lovelace custom card).
 //
 // Installed through HACS from kummerer94/daylight-addon (see DOCS.md).
@@ -18,7 +29,7 @@
 // Plain JavaScript without a build step. The helpers are exported for tests.
 
 // The public repository sync stamps this with the app manifest's version.
-const VERSION = "0.7.0";
+const VERSION = "0.8.0";
 // crypto.randomUUID exists only on HTTPS or localhost; Home Assistant often
 // runs on plain http on the home network.
 function randomId() {
@@ -294,8 +305,8 @@ export function clockTime(iso, locale) {
 }
 
 const STYLE = `
-:host{display:block}
-ha-card{padding:16px;display:flex;flex-direction:column;gap:12px;height:100%;box-sizing:border-box}
+:host{display:block;min-width:0}
+ha-card{padding:16px;display:flex;flex-direction:column;gap:12px;height:100%;box-sizing:border-box;overflow-wrap:anywhere}
 .head{display:flex;align-items:center;gap:10px}
 .head ha-icon{color:var(--state-icon-color,var(--primary-color));--mdc-icon-size:24px}
 .title{flex:1;min-width:0}
@@ -308,16 +319,16 @@ li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;backgroun
 .alert ha-icon{color:var(--warning-color);--mdc-icon-size:20px}
 .quiet{margin:0;color:var(--secondary-text-color);font-size:var(--ha-font-size-s,12px)}
 .ask{display:flex;gap:8px}
-.ask input{flex:1;min-width:0;font:inherit;font-size:var(--ha-font-size-m,14px);color:var(--primary-text-color);background:var(--secondary-background-color,rgba(127,127,127,.1));border:1px solid var(--divider-color);border-radius:var(--ha-border-radius-md,8px);padding:10px 12px;outline:none}
+.ask input{flex:1;min-width:0;min-height:44px;box-sizing:border-box;font:inherit;font-size:max(16px,var(--ha-font-size-m,14px));color:var(--primary-text-color);background:var(--secondary-background-color,rgba(127,127,127,.1));border:1px solid var(--divider-color);border-radius:var(--ha-border-radius-md,8px);padding:10px 12px;outline:none}
 .ask input:focus{border-color:var(--primary-color)}
-button{font:inherit;font-size:var(--ha-font-size-m,14px);border:none;border-radius:var(--ha-border-radius-md,8px);padding:8px 14px;cursor:pointer;background:var(--primary-color);color:var(--text-primary-color,#fff)}
+button{flex-shrink:0;min-width:44px;min-height:44px;box-sizing:border-box;font:inherit;font-size:var(--ha-font-size-m,14px);border:none;border-radius:var(--ha-border-radius-md,8px);padding:8px 14px;cursor:pointer;background:var(--primary-color);color:var(--text-primary-color,#fff)}
 button:disabled{opacity:.5;cursor:default}
 button.link{background:none;color:var(--primary-color);padding:4px 0}
 .answer{border-top:1px solid var(--divider-color);padding-top:12px;display:flex;flex-direction:column;gap:8px}
 .answer .q{margin:0;color:var(--secondary-text-color);font-size:var(--ha-font-size-s,12px)}
 .answer .text{color:var(--primary-text-color);font-size:var(--ha-font-size-m,14px);line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto}
 .answer ha-markdown{white-space:normal}
-.actions{display:flex;gap:16px;align-items:center}
+.actions{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
 `;
 
 /** `el("li", {className: "x"}, "text")`; children are text or elements. */
@@ -591,12 +602,8 @@ export class DaylightCard extends Base {
         );
       else {
         const text = el("div", { className: "text" });
-        if (a.status === "done" && customElements.get("ha-markdown")) {
-          const markdown = document.createElement("ha-markdown");
-          markdown.content = a.text;
-          markdown.breaks = true;
-          text.append(markdown);
-        } else text.textContent = a.text;
+        // Answers are plain text: model output must never fetch image URLs.
+        text.textContent = cardAnswerText(a.text);
         answer.append(text);
       }
       if (a.approvals > 0)
