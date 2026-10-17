@@ -29,7 +29,7 @@ export function cardAnswerText(text) {
 // Plain JavaScript without a build step. The helpers are exported for tests.
 
 // The public repository sync stamps this with the app manifest's version.
-const VERSION = "0.9.1";
+const VERSION = "0.10.0";
 // crypto.randomUUID exists only on HTTPS or localhost; Home Assistant often
 // runs on plain http on the home network.
 function randomId() {
@@ -315,8 +315,6 @@ ha-card{padding:16px;display:flex;flex-direction:column;gap:12px;height:100%;box
 ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 li{display:flex;gap:10px;align-items:baseline;color:var(--primary-text-color);font-size:var(--ha-font-size-m,14px);line-height:1.4}
 li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--primary-color);transform:translateY(-2px)}
-.alert{display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:var(--ha-border-radius-md,8px);background:rgba(var(--rgb-warning-color,255,166,0),.12);color:var(--primary-text-color);font-size:var(--ha-font-size-m,14px)}
-.alert ha-icon{color:var(--warning-color);--mdc-icon-size:20px}
 .quiet{margin:0;color:var(--secondary-text-color);font-size:var(--ha-font-size-s,12px)}
 .ask{display:flex;gap:8px}
 .ask input{flex:1;min-width:0;min-height:44px;box-sizing:border-box;font:inherit;font-size:max(16px,var(--ha-font-size-m,14px));color:var(--primary-text-color);background:var(--secondary-background-color,rgba(127,127,127,.1));border:1px solid var(--divider-color);border-radius:var(--ha-border-radius-md,8px);padding:10px 12px;outline:none}
@@ -512,15 +510,6 @@ export class DaylightCard extends Base {
         ),
       ),
     );
-    for (const alert of (b && b.alerts) || [])
-      card.append(
-        el(
-          "div",
-          { className: "alert" },
-          el("ha-icon", { icon: "mdi:train" }),
-          alert,
-        ),
-      );
     if (b) {
       card.append(
         el("ul", {}, ...b.items.map((item) => el("li", { textContent: item }))),
