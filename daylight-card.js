@@ -17,7 +17,7 @@
 // Plain JavaScript without a build step. The helpers are exported for tests.
 
 // The public repository sync stamps this with the app manifest's version.
-const VERSION = "0.1.0";
+const VERSION = "0.1.1";
 /** Validate the ingress session at most this often. It lives 15 minutes. */
 export const SESSION_CHECK_MS = 4 * 60_000;
 const BRIEFING_EVERY_MS = 5 * 60_000;

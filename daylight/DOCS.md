@@ -18,7 +18,7 @@ If Daylight is already installed from the private repository, download a portabl
 
 ## First start
 
-1. Each person opens Daylight once with their own Home Assistant login. Daylight asks "Which Daylight profile is yours?". Choose your profile, or add a new one. You choose only once.
+1. Each person opens Daylight once with their own Home Assistant login. If your Home Assistant name, or its first word, is the name of exactly one free profile, Daylight opens that profile directly. Otherwise Daylight asks "Which Daylight profile is yours?". Choose your profile, or add a new one. You choose only once.
 2. If you restored a PC backup, you are done. The ChatGPT and Fastmail sign-ins and the Home Assistant MCP connection move with the backup. Daylight connects to the MCP address by itself (see below).
 3. Without a backup, connect the services in **Settings**:
    - **ChatGPT account → Sign in**. Daylight shows a code and a link. Open the link on any device, sign in to ChatGPT, and enter the code.
