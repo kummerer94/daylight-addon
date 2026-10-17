@@ -1,0 +1,5 @@
+# Lets Home Assistant add this Git repository as an app repository.
+# Reference: https://contributors.home-assistant.io/apps/guides/repository/
+name: Daylight
+url: https://github.com/kummerer94/daylight-addon
+maintainer: Alexander Kammerer
