@@ -8,7 +8,8 @@
 // Assistant's app panel does, and keeps it alive. Home Assistant allows
 // these calls for users who are not administrators. The Supervisor then
 // tells Daylight which Home Assistant user asks; that user's linked profile
-// decides what the card shows. The card never names a profile itself.
+// or unique free name match decides what the card shows. Without a match,
+// Daylight uses the original profile. The card never names a profile itself.
 //
 // The card speaks the language of the Home Assistant user: German when the
 // user's language starts with "de", English otherwise. It sends that language
@@ -17,7 +18,7 @@
 // Plain JavaScript without a build step. The helpers are exported for tests.
 
 // The public repository sync stamps this with the app manifest's version.
-const VERSION = "0.3.0";
+const VERSION = "0.4.0";
 // crypto.randomUUID exists only on HTTPS or localhost; Home Assistant often
 // runs on plain http on the home network.
 function randomId() {
@@ -49,7 +50,6 @@ export const STRINGS = {
     askPlaceholder: "Ask Daylight…",
     askLabel: "Ask Daylight",
     ask: "Ask",
-    signIn: "To ask Daylight here, sign in with your own Home Assistant user.",
     thinking: "Daylight is thinking…",
     needsApproval: "This needs your approval in Daylight.",
     openInDaylight: "Open in Daylight",
@@ -74,8 +74,6 @@ export const STRINGS = {
     askPlaceholder: "Daylight fragen…",
     askLabel: "Daylight fragen",
     ask: "Fragen",
-    signIn:
-      "Melde dich mit deinem eigenen Home-Assistant-Benutzer an, um Daylight hier zu fragen.",
     thinking: "Daylight denkt nach…",
     needsApproval: "Dafür ist deine Freigabe in Daylight nötig.",
     openInDaylight: "In Daylight öffnen",
@@ -488,11 +486,7 @@ export class DaylightCard extends Base {
     const typed = root.querySelector("input")?.value ?? "";
     const focused = root.activeElement?.tagName === "INPUT";
     const b = this._briefing;
-    const sub = b
-      ? [b.date, b.view === "profile" && b.name ? b.name : null]
-          .filter(Boolean)
-          .join(" · ")
-      : "";
+    const sub = b ? [b.date, b.name].filter(Boolean).join(" · ") : "";
     const card = el("ha-card");
     card.append(
       el(
@@ -554,39 +548,31 @@ export class DaylightCard extends Base {
       );
 
     if (this._config.show_prompt && b) {
-      if (b.canAsk) {
-        const input = el("input", {
-          type: "text",
-          placeholder: this._conversationId
-            ? this._t("askFollowUp")
-            : this._t("askPlaceholder"),
-          value: typed,
-          maxLength: 4000,
-          enterKeyHint: "send",
-        });
-        input.setAttribute("aria-label", this._t("askLabel"));
-        const send = el("button", {
-          textContent: this._t("ask"),
-          disabled: this._answer?.status === "waiting",
-        });
-        const submit = () => {
-          const value = input.value;
-          input.value = "";
-          this._ask(value);
-        };
-        send.onclick = submit;
-        input.onkeydown = (event) => {
-          if (event.key === "Enter" && !event.isComposing) submit();
-        };
-        card.append(el("div", { className: "ask" }, input, send));
-        if (focused) queueMicrotask(() => input.focus());
-      } else
-        card.append(
-          el("p", {
-            className: "quiet",
-            textContent: this._t("signIn"),
-          }),
-        );
+      const input = el("input", {
+        type: "text",
+        placeholder: this._conversationId
+          ? this._t("askFollowUp")
+          : this._t("askPlaceholder"),
+        value: typed,
+        maxLength: 4000,
+        enterKeyHint: "send",
+      });
+      input.setAttribute("aria-label", this._t("askLabel"));
+      const send = el("button", {
+        textContent: this._t("ask"),
+        disabled: this._answer?.status === "waiting",
+      });
+      const submit = () => {
+        const value = input.value;
+        input.value = "";
+        this._ask(value);
+      };
+      send.onclick = submit;
+      input.onkeydown = (event) => {
+        if (event.key === "Enter" && !event.isComposing) submit();
+      };
+      card.append(el("div", { className: "ask" }, input, send));
+      if (focused) queueMicrotask(() => input.focus());
     }
 
     const a = this._answer;
