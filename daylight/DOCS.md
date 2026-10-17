@@ -38,6 +38,8 @@ Fastmail sign-in: select **Open Fastmail** and allow access in the new tab. The 
 - Home Assistant's login is the only protection. Daylight profiles have no passwords. Anybody who can sign in to Home Assistant with your user can open your profile.
 - The app shows in the sidebar for all Home Assistant users, also non-administrators, so that both adults can use it.
 
+You can also ask Daylight in chat to change your own settings, for example "Add my calendar.family from Home Assistant". It changes only your own calendars, notification devices, profile name, and display link (off), and only when you ask. Logins, tokens, and backups stay in Settings.
+
 ## Notifications on the phone
 
 Daylight sends its notifications through the Home Assistant Companion app. Browser push needs HTTPS, and Home Assistant opens over plain http here, so browser push does not work in the Home Assistant app or on an iPhone.
