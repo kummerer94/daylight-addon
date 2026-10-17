@@ -1,0 +1,42 @@
+name: Daylight
+version: "0.1.0"
+slug: daylight
+description: Household assistant for two adults - chores, groceries, documents and chat.
+url: https://github.com/kummerer94/daylight-addon
+arch:
+  - aarch64
+  - amd64
+startup: application
+boot: auto
+# The image has no S6 overlay. Docker's init forwards SIGTERM to Node.
+init: true
+ingress: true
+ingress_port: 8099
+ingress_stream: false
+panel_icon: mdi:white-balance-sunny
+panel_title: Daylight
+# Both adults open Daylight; the second one is not a Home Assistant admin.
+panel_admin: false
+# Read access for the Home Assistant backend client (SUPERVISOR_TOKEN,
+# http://supervisor/core/api). No Supervisor API access.
+homeassistant_api: true
+hassio_api: false
+# On SIGTERM, Daylight finishes queued work within its own 10 s deadline.
+timeout: 20
+# A cold backup stops Daylight, so SQLite files are copied in a clean state.
+backup: cold
+backup_exclude:
+  - "*.log"
+# /share/daylight-import is read once to move data from the PC (see DOCS.md).
+map:
+  - type: share
+    read_only: false
+watchdog: "http://[HOST]:[PORT:8099]/api/health"
+# No ports: Daylight is reachable only through Home Assistant ingress.
+options:
+  time_zone: Europe/Berlin
+  model: gpt-6.1-sol
+schema:
+  time_zone: str
+  model: match(^[A-Za-z0-9._:/-]{1,160}$)
+image: ghcr.io/kummerer94/daylight
