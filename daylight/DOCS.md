@@ -29,6 +29,42 @@ The MCP address needs no change. For a webhook address such as `http://<any-host
 
 Fastmail sign-in: select **Open Fastmail** and allow access in the new tab. The next page may not open; this is expected. Copy its full address from the address bar. It starts with `http://127.0.0.1:49152/daylight/fastmail-return`. Paste it into **Return address** in Daylight and select **Connect** within 10 minutes. Paste it only there, never into chat or a bug report. Daylight renews the sign-in by itself.
 
+## Use Daylight as an app on your iPhone
+
+Daylight can open full screen from your Home Screen at its own HTTPS address. Tailscale must be connected on the iPhone, at home and away. Home Assistant ingress and the dashboard card keep working.
+
+1. In the Tailscale admin console, enable **MagicDNS** and **HTTPS certificates** under **DNS**. Use the community Tailscale app on Home Assistant (`a0d7b954_tailscale`). Services require the host device to be a tagged node. In **Access controls**, add `"tagOwners": {"tag:homeassistant": ["autogroup:admin"]}` to the existing policy file, keeping other entries. In the HA Tailscale app, set `advertise_tags: [tag:homeassistant]`. Do not forward a router port or enable Funnel.
+2. Choose the service name `daylight`. Its address is `https://daylight.<tailnet>.ts.net`. Replace `<tailnet>` with the actual DNS name shown by Tailscale.
+3. Define **svc:daylight** on the Tailscale admin console's **Services** page. In **Daylight → Configuration**, set these options, then restart Daylight:
+
+   ```yaml
+   direct_origin: "https://daylight.<tailnet>.ts.net"
+   home_assistant_url: "http://100.124.80.51:8123"
+   ```
+
+   `home_assistant_url` is the Home Assistant address Safari can reach over Tailscale. This HA instance uses `http://100.124.80.51:8123`; it is not shared through Tailscale Serve. HTTP here travels over the encrypted Tailscale connection. Open it on the iPhone first. Give only the origin, without a path. Daylight's `direct_origin` must use HTTPS. Both options must be set together. Leave both empty to disable direct access.
+4. In Daylight's **Network** settings, leave **8100/tcp** mapped to host port **8100**. Add this entry to the Tailscale app's `services` list, keeping any existing services:
+
+   ```yaml
+   services:
+     - name: "svc:daylight"
+       target: "http://127.0.0.1:8100"
+       protocol: https
+       port: 443
+   ```
+
+   Restart the Tailscale app and approve this host for `svc:daylight` in the Tailscale admin console's **Services** page. Allow the household's users to access this service in your tailnet policy. See the [Tailscale app Services instructions](https://github.com/hassio-addons/addon-tailscale/blob/main/tailscale/DOCS.md#option-services). The target is the host's mapped port and survives app container IP changes and reboots. If you deliberately change the host port, change the target to match.
+5. On the iPhone, connect Tailscale. In **Safari**, open the Daylight HTTPS address. Select **Share → Add to Home Screen** and keep **Open as Web App** enabled if offered.
+6. Open **Daylight from its new Home Screen icon**, then select **Sign in with Home Assistant**. Use your own HA account. Sign in inside the installed app even if you already signed in in Safari. Each HA user opens the same profile as through ingress. If no profile matches, choose or create yours.
+7. In **Settings → Signed-in devices**, end a lost device's sign-in with **Revoke**. **Sign out of Daylight** ends this device's sign-in. Devices stay signed in for 180 days after use; this lifetime renews at most once an hour. At most 20 devices are retained for each HA account.
+8. For browser push on **iOS 16.4 or later**, open the installed app's **Settings → Notifications → Enable notifications**. Accept the iPhone prompt. This is offered only in a secure browser context with push support. For browser push to deliver normally, untick your Companion devices; selected HA Companion devices still take priority. The Companion notification setup below is unchanged.
+
+Port 8100 is also mapped on the LAN. Its plain HTTP address is not a login address: Daylight accepts only the configured HTTPS host and always sets Secure cookies. Forwarded scheme, host and HA user headers never grant authentication. Use the HTTPS Tailscale address for sign-in and everyday use. Port 8099 remains ingress-only.
+
+The sign-in uses a full-page redirect in the same window, without a popup. iOS can open another origin in a browser sheet. Desktop WebKit checks cannot prove the installed iPhone's return navigation or cookie storage. On a real iPhone, check that HA sign-in returns to the installed Daylight app, that closing and reopening it stays signed in, and that a notification arrives and opens it. If the return remains in Safari or a sheet and the app still asks to sign in, this iOS flow needs further work; do not rely on a Safari login being copied into the installed app.
+
+HA supplies identity only. Daylight revokes its temporary HA token immediately and stores a separate random session. Revoking HA access or disabling a HA user does not automatically end existing Daylight sessions. Revoke them in Daylight too. Backups contain the session hashes; restoring an older backup can restore an earlier device sign-in until it expires. If HA is unavailable during sign-in, retry when it is back. A failed token-revocation response grants no Daylight session; check HA's token list after a prolonged outage.
+
 ## Profiles and Home Assistant users
 
 - Each Home Assistant user opens one Daylight profile. Each profile belongs to one Home Assistant user.
@@ -42,7 +78,7 @@ You can also ask Daylight in chat to change your own settings, for example "Add 
 
 ## Notifications on the phone
 
-Daylight sends its notifications through the Home Assistant Companion app. Browser push needs HTTPS, and Home Assistant opens over plain http here, so browser push does not work in the Home Assistant app or on an iPhone.
+Daylight can send notifications through the Home Assistant Companion app. Browser push also works in the installed HTTPS iPhone app on iOS 16.4 or later; see the setup above. Plain http cannot use browser push.
 
 1. Install the **Home Assistant** app on your phone or tablet and sign in with your own Home Assistant user. Home Assistant then has a `notify.mobile_app_<device>` service for that device.
 2. Allow notifications for the Home Assistant app in the phone's settings (iPhone: **Settings → Notifications → Home Assistant**). Without this permission, nothing arrives.
@@ -107,6 +143,8 @@ The older way to show Daylight on a dashboard. Use the dashboard card above inst
 | ----------- | --------------- | --------------------------------------------------------------- |
 | `time_zone` | `Europe/Berlin` | Household time zone for chore days, daily task times, and dates |
 | `model`     | `gpt-6.1-sol`   | The ChatGPT model that the assistant uses                       |
+| `direct_origin` | empty | Daylight HTTPS origin for the optional iPhone app |
+| `home_assistant_url` | empty | HA HTTP or HTTPS origin the phone reaches for sign-in |
 
 Restart the app after you change an option.
 
@@ -156,8 +194,8 @@ To start again with an empty Daylight, uninstall the app (this deletes `/data`) 
 
 ## Network access
 
-- Daylight has no open port. It is reachable only through Home Assistant ingress. The dashboard card uses ingress too.
-- Inside the container it answers only the Home Assistant ingress proxy (`172.30.32.2`) and its own loopback.
+- Port 8099 is ingress-only. Optional direct access uses mapped port 8100 behind Tailscale HTTPS, with its own required sign-in. The dashboard card uses ingress.
+- The ingress listener answers only the Home Assistant ingress proxy (`172.30.32.2`) and its own loopback. The separate direct listener never trusts HA identity headers.
 - The app uses the Home Assistant API through the Supervisor (`homeassistant_api: true`). The Supervisor gives the app a token in `SUPERVISOR_TOKEN`. Only Daylight's Home Assistant client uses it. The client reads, and makes one write: `notify.mobile_app_<device>` for the devices that you chose for notifications.
 
 ## Memory
