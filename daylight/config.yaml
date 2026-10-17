@@ -1,5 +1,5 @@
 name: Daylight
-version: "0.1.2"
+version: "0.2.0"
 slug: daylight
 description: Household assistant for two adults - chores, groceries, documents and chat.
 url: https://github.com/kummerer94/daylight-addon
@@ -17,8 +17,10 @@ panel_icon: mdi:white-balance-sunny
 panel_title: Daylight
 # Both adults open Daylight; the second one is not a Home Assistant admin.
 panel_admin: false
-# Read access for the Home Assistant backend client (SUPERVISOR_TOKEN,
-# http://supervisor/core/api). No Supervisor API access.
+# For the Home Assistant backend client (SUPERVISOR_TOKEN,
+# http://supervisor/core/api): fixed reads, and one fixed write,
+# notify.mobile_app_<device>, for Daylight's own notifications to the
+# devices that profiles chose. No Supervisor API access.
 homeassistant_api: true
 hassio_api: false
 # On SIGTERM, Daylight finishes queued work within its own 10 s deadline.

@@ -38,6 +38,19 @@ Fastmail sign-in: select **Open Fastmail** and allow access in the new tab. The 
 - Home Assistant's login is the only protection. Daylight profiles have no passwords. Anybody who can sign in to Home Assistant with your user can open your profile.
 - The app shows in the sidebar for all Home Assistant users, also non-administrators, so that both adults can use it.
 
+## Notifications on the phone
+
+Daylight sends its notifications through the Home Assistant Companion app. Browser push needs HTTPS, and Home Assistant opens over plain http here, so browser push does not work in the Home Assistant app or on an iPhone.
+
+1. Install the **Home Assistant** app on your phone or tablet and sign in with your own Home Assistant user. Home Assistant then has a `notify.mobile_app_<device>` service for that device.
+2. Allow notifications for the Home Assistant app in the phone's settings (iPhone: **Settings → Notifications → Home Assistant**). Without this permission, nothing arrives.
+3. In Daylight, open **Settings → Notifications → Send to my phone through Home Assistant**. Tick your own devices. Each person chooses their own devices.
+4. Select **Send test notification**.
+
+You get reminders, finished or failed background tasks, and new chores from the house. They arrive as notifications of the Home Assistant app. A tap opens Daylight in the Home Assistant app (`/app/<app slug>`). It opens the start page, not a specific chat. A new background task notification replaces the previous one.
+
+While a device is chosen, Daylight sends no browser notification to your profile. This prevents the same message twice on one phone. If every Home Assistant delivery fails, Daylight tries browser push instead. Settings shows the last error.
+
 ## Dashboard card
 
 The Daylight card shows Daylight on a Home Assistant dashboard, in the look of the other cards. It has two parts:
@@ -143,7 +156,7 @@ To start again with an empty Daylight, uninstall the app (this deletes `/data`) 
 
 - Daylight has no open port. It is reachable only through Home Assistant ingress. The dashboard card uses ingress too.
 - Inside the container it answers only the Home Assistant ingress proxy (`172.30.32.2`) and its own loopback.
-- The app uses the Home Assistant API through the Supervisor (`homeassistant_api: true`). The Supervisor gives the app a token in `SUPERVISOR_TOKEN`. Only Daylight's Home Assistant client uses it.
+- The app uses the Home Assistant API through the Supervisor (`homeassistant_api: true`). The Supervisor gives the app a token in `SUPERVISOR_TOKEN`. Only Daylight's Home Assistant client uses it. The client reads, and makes one write: `notify.mobile_app_<device>` for the devices that you chose for notifications.
 
 ## Memory
 
@@ -152,5 +165,6 @@ On a PC, the server uses about 130 MB at rest and about 160 MB under heavy synth
 ## Known limits
 
 - Fastmail sign-in needs a browser with an address bar so you can copy the return address. If the companion app hides it, open Home Assistant in your phone or computer browser.
-- Browser push notifications in the Home Assistant companion app and on an iPhone Home Screen are not tested.
+- Browser push notifications do not work over plain http. Use **Send to my phone through Home Assistant** instead.
+- A notification tap opens Daylight's start page in the Home Assistant app, not a specific chat.
 - Installing and updating needs internet access and valid ghcr.io registry credentials. The image supports aarch64 (including Raspberry Pi 4 with a 64-bit Home Assistant OS) and amd64.
