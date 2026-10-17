@@ -17,7 +17,18 @@
 // Plain JavaScript without a build step. The helpers are exported for tests.
 
 // The public repository sync stamps this with the app manifest's version.
-const VERSION = "0.1.1";
+const VERSION = "0.1.2";
+// crypto.randomUUID exists only on HTTPS or localhost; Home Assistant often
+// runs on plain http on the home network.
+function randomId() {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
 /** Validate the ingress session at most this often. It lives 15 minutes. */
 export const SESSION_CHECK_MS = 4 * 60_000;
 const BRIEFING_EVERY_MS = 5 * 60_000;
@@ -408,7 +419,7 @@ export class DaylightCard extends Base {
     try {
       const body = {
         text: question,
-        requestId: crypto.randomUUID(),
+        requestId: randomId(),
         ...(this._conversationId
           ? { conversationId: this._conversationId }
           : {}),
