@@ -150,7 +150,7 @@ To start again with an empty Daylight, uninstall the app (this deletes `/data`) 
 - Home Assistant backups include the app and its `/data` folder. That is the whole Daylight database, including the ChatGPT and Fastmail sign-ins and any MCP access tokens. Protect backup files like passwords. Use backup encryption.
 - The app uses cold backups. Home Assistant stops Daylight for the backup and starts it again afterwards. This keeps the SQLite files consistent.
 - Restoring a backup restores pending work too. Check scheduled tasks and open approvals after a restore.
-- **Settings → Backup** also downloads and restores portable `.daylight` files, up to 200 MB. These files are unencrypted and contain household logins. Anyone with access to Daylight can use this card; profiles are not passwords. Home Assistant protects access with its own login.
+- **Settings → Backup** also downloads and restores portable `.daylight` files, up to 200 MB. Chat files count towards this limit. These files are unencrypted and contain household logins. Anyone with access to Daylight can use this card; profiles are not passwords. Home Assistant protects access with its own login.
 - A restore preview expires after 15 minutes. Cancel removes the uploaded copy. Old safety copies stay in the data folder and are excluded from portable downloads. They use disk space and contain secrets too. Keep enough free space for the upload, unpacked data and safety copy. Remove old copies only after checking the restored data, with Daylight stopped.
 - If shutdown cannot finish within 10 seconds, Daylight exits without replacing the data. Restart it before trying again. If file replacement is interrupted, the next startup uses the safety copy to roll back the incomplete restore.
 
@@ -163,6 +163,13 @@ To start again with an empty Daylight, uninstall the app (this deletes `/data`) 
 ## Memory
 
 On a PC, the server uses about 130 MB at rest and about 160 MB under heavy synthetic load (two profiles, 300 conversations, 120 documents, 400 list items). The Node heap is limited to 256 MB. A Raspberry Pi 4 with 4 GB has enough memory for this.
+
+## Files in chat
+
+- Attach photos, screenshots, PDF files and text files with the paperclip in the chat. On the phone, the camera button takes a photo. This works over plain http and in the Home Assistant app.
+- Large photos are made smaller on the phone before upload (2048 px, JPEG). A file can have at most 10 MB; a message can have 5 files.
+- A scanned PDF without text cannot be read. Send photos of the pages instead.
+- Files are stored in `/data/attachments`, so backups include them. Only the profile that sent a file can see it.
 
 ## Known limits
 
