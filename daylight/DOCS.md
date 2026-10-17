@@ -33,7 +33,7 @@ Fastmail sign-in: select **Open Fastmail** and allow access in the new tab. The 
 
 Daylight can open full screen from your Home Screen at its own HTTPS address. Tailscale must be connected on the iPhone, at home and away. Home Assistant ingress and the dashboard card keep working.
 
-1. In the Tailscale admin console, enable **MagicDNS** and **HTTPS certificates** under **DNS**. Use the community Tailscale app on Home Assistant (`a0d7b954_tailscale`). Services require the host device to be a tagged node. In **Access controls**, add `"tagOwners": {"tag:homeassistant": ["autogroup:admin"]}` to the existing policy file, keeping other entries. In the HA Tailscale app, set `advertise_tags: [tag:homeassistant]`. Do not forward a router port or enable Funnel.
+1. In the Tailscale admin console, enable **MagicDNS** and **HTTPS certificates** under **DNS**. Use the community Tailscale app on Home Assistant (`a0d7b954_tailscale`). Services require the host device to be a tagged node. In **Access controls**, add `"tagOwners": {"tag:homeassistant": ["autogroup:admin"]}` to the existing policy file, keeping other entries. Then open **Machines**, open the menu of the Home Assistant device, select **Edit ACL tags** and add `tag:homeassistant`. Leave the Tailscale app's `advertise_tags` option empty: a tag change there makes Tailscale ask for a new login. The service itself needs no tag. Do not forward a router port or enable Funnel.
 2. Choose the service name `daylight`. Its address is `https://daylight.<tailnet>.ts.net`. Replace `<tailnet>` with the actual DNS name shown by Tailscale.
 3. Define **svc:daylight** on the Tailscale admin console's **Services** page. In **Daylight → Configuration**, set these options, then restart Daylight:
 
