@@ -76,6 +76,17 @@ HA supplies identity only. Daylight revokes its temporary HA token immediately a
 
 You can also ask Daylight in chat to change your own settings, for example "Add my calendar.family from Home Assistant". It changes only your own calendars, notification devices, profile name, and display link (off), and only when you ask. Logins, tokens, and backups stay in Settings.
 
+Home Assistant and calendar changes that need approval show their saved action in chat. Review the details, then choose **Approve** or **Reject** there or in **Inbox**. Both show the current status and result. Scheduled tasks cannot approve changes.
+
+## Assistant access to Home Assistant
+
+In **Settings → Home Assistant → Access**, choose the tools available to your profile:
+
+- **Standard** is the default, including after an update. It reads selected information and can switch lights and switches after approval.
+- **Full** makes every tool in the Home Assistant MCP server's live catalog available. Tools the server marks read-only, and Standard's named read tools (including the skill guide), run directly. Every other tool needs approval of its exact saved arguments in chat. Scheduled tasks cannot approve actions.
+
+Full uses the server's argument schemas without Daylight's additional argument limits. The existing **Access level** must allow **Ask before changes** to propose changes in either mode. The household connection stays shared. The assistant cannot change Standard/Full mode. Fastmail access is unchanged.
+
 ## Notifications on the phone
 
 Daylight can send notifications through the Home Assistant Companion app. Browser push also works in the installed HTTPS iPhone app on iOS 16.4 or later; see the setup above. Plain http cannot use browser push.
@@ -197,6 +208,19 @@ To start again with an empty Daylight, uninstall the app (this deletes `/data`) 
 - Port 8099 is ingress-only. Optional direct access uses mapped port 8100 behind Tailscale HTTPS, with its own required sign-in. The dashboard card uses ingress.
 - The ingress listener answers only the Home Assistant ingress proxy (`172.30.32.2`) and its own loopback. The separate direct listener never trusts HA identity headers.
 - The app uses the Home Assistant API through the Supervisor (`homeassistant_api: true`). The Supervisor gives the app a token in `SUPERVISOR_TOKEN`. Only Daylight's Home Assistant client uses it. The client reads, and makes one write: `notify.mobile_app_<device>` for the devices that you chose for notifications.
+- MVG departure questions make read-only requests to `https://www.mvg.de`. No API key or extra sign-in is needed.
+
+## S-Bahn departures
+
+Ask, for example, “When are the next S1 departures from Lohhof toward Freising?” The assistant uses `s1_departures` for S1, and `mvg_api` for other MVG station and departure lookups. Both tools are available to every profile without a Settings switch.
+
+Station names accept case differences, ß/ss and umlaut spelling variants. Donnersbergerbrücke, Lohhof, Unterschleißheim, Feldmoching and Hirschgarten (München) have fixed name aliases. Only Lohhof has a fixed ID. Other names are looked up and must identify one S-Bahn station. Ambiguous names return candidates so you can specify the station and city.
+
+Direction matches text in the destination, ignoring case and umlaut spelling differences. Use a destination such as Freising, Flughafen or Ostbahnhof. Innenstadt and stadteinwärts have no special mapping; they match only if they appear in the destination text.
+
+S1 results show up to 6 departures by default, at most 15, filtered from MVG's next 20 S-Bahn departures. An empty result means no matching S1 was returned in that window. It does not prove there is no service later. This is a departure board, not route planning or a promise that MVG has reported every service change.
+
+Times are in Europe/Berlin, with ISO timestamps too. “Live” means MVG marks the row as realtime. “Timetable only” does not confirm the train is on time and has no expected time. Replies mention cancellations, reported delays, platform changes and when the data was fetched. Missing delay or platform data stays unknown. Departures are cached for 60 seconds and station resolutions for 24 hours. Cache hits retain the original fetch time and show their age. A failed request reports unavailable and does not serve expired departures. No other transport service or relay is used.
 
 ## Memory
 
