@@ -29,7 +29,7 @@ export function cardAnswerText(text) {
 // Plain JavaScript without a build step. The helpers are exported for tests.
 
 // The public repository sync stamps this with the app manifest's version.
-const VERSION = "0.10.3";
+const VERSION = "0.11.0";
 // crypto.randomUUID exists only on HTTPS or localhost; Home Assistant often
 // runs on plain http on the home network.
 function randomId() {
