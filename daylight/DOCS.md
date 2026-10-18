@@ -234,6 +234,14 @@ On a PC, the server uses about 130 MB at rest and about 160 MB under heavy synth
 - Files are stored in `/data/attachments`, so backups include them. Only the profile that sent a file can see it.
 - **Add photo** puts photos into the note of a Groceries or Chores item, or into a Markdown document. The iPhone offers the camera and the photo library. Everybody who can see the item or the document sees its photos. Photos are in `/data/attachments` too, so backups include them.
 
+## Images from chat
+
+Ask Daylight to generate an image. It uses the household ChatGPT sign-in and its allowance, and saves one private 1024×1024 PNG with the reply. Select it to enlarge or download it. Images stay through reloads, conversation forks and backups.
+
+Quality defaults to low. Ask for medium or high quality, or say "Regenerate that in high quality" to create a new image from the earlier prompt. Higher quality can take longer and use more allowance. Editing and reference photos are not supported yet, and scheduled tasks cannot generate images.
+
+Image generation is experimental and depends on the account and conversation model. If generation is interrupted, Daylight never sends that request again automatically. A saved image remains available; otherwise, send a new message to try again.
+
 ## Known limits
 
 - Fastmail sign-in needs a browser with an address bar so you can copy the return address. If the companion app hides it, open Home Assistant in your phone or computer browser.
