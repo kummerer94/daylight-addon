@@ -104,7 +104,7 @@ While a device is chosen, Daylight sends no browser notification to your profile
 
 The Daylight card shows Daylight on a Home Assistant dashboard, in the look of the other cards. It has two parts:
 
-- **What matters** today and in the next two days: appointments, bins, chores that are due or late, dinner, approvals that wait, reminders, expiring documents, and weather that changes plans.
+- **What matters** today and in the next two days. First what needs you now: late chores, bins to put out tonight, approvals that wait and expiring documents. Then today, tomorrow and the day after with their times: appointments, reminders, chores that are due, bins, dinner, and weather that changes plans. The button at the top, **Review** and **+N more** open Daylight.
 - **Ask Daylight**: a box for a quick question. The question becomes a normal chat in Daylight. The answer shows in the card. **Open in Daylight** opens the app; the chat is at the top of the chat list. Approvals stay in Daylight: the card only says that an action waits.
 
 Set it up once:
@@ -125,7 +125,7 @@ Card options:
 
 | Option        | Default         | Meaning                                                                         |
 | ------------- | --------------- | ------------------------------------------------------------------------------- |
-| `title`       | `Daylight`      | The card title                                                                  |
+| `title`       | none            | A heading instead of the date; the date then shows below it                     |
 | `show_prompt` | `true`          | `false` hides the question box                                                  |
 | `app`         | found by itself | The app slug, such as `a1b2c3d4_daylight`, if the card does not find Daylight |
 
@@ -134,7 +134,7 @@ How it works:
 - The card finds Daylight in the sidebar, so keep **Show in sidebar** on. It makes its own ingress session through Home Assistant, like the app panel does, also for users who are not administrators. It renews the session while the dashboard is open, and makes a new one after the tablet slept. You do not need to open Daylight first.
 - Your Home Assistant user selects the linked profile. If there is no link, Daylight links the one free profile whose name matches your Home Assistant name or its first word. The card shows that person's own and shared calendars, chores, approvals and reminders, and a question box.
 - If no profile matches, or Home Assistant sends no user, the card uses the household's original profile (`local`). A tablet user without a match therefore sees that person's briefing and can ask as that person. This fallback does not link the tablet user. The main app still asks unmatched users to choose a profile.
-- Daylight writes the "what matters" text with the model in the background: early in the morning and after the facts changed, at most every 30 minutes and 12 times a day for each person. A card load never starts a model call. Without a model text for today, the card shows a plain list of the same facts.
+- The rows come from Daylight's own data, without the model. The model writes only one summary line above them, in the background: early in the morning and after the facts changed, at most every 30 minutes and 12 times a day for each person. Reading or refreshing the card does not start a model call. The next background check updates the summary. Without a model text for today, for example at night, the card shows the same rows without the line.
 - The card uses the language of your Home Assistant user (your profile in Home Assistant). German languages get German texts, all other languages get English. The "what matters" text and the dates come in the same language. Daylight keeps one text for each language. It writes a text in a language only while a card shows that language, so a second language costs model calls only when somebody uses it. A quick question gets its answer in the language of the question.
 - After an app update, download the card update in HACS and reload the dashboard page. Update the app and card together.
 - HACS installs the public card. The Daylight app has no access to Home Assistant's config folder. All other app code and the image stay private.

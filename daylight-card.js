@@ -26,10 +26,16 @@ export function cardAnswerText(text) {
 // user's language starts with "de", English otherwise. It sends that language
 // to Daylight, so the briefing comes in the same language.
 //
+// The card shows the board: typed rows that Daylight makes from the facts
+// without the model. What needs attention comes first, then today and the
+// next days. The model's summary line, when one exists, stands above them.
+// A server older than the board sends only lines; the card shows them as a
+// list. All texts go into the page as text, never as HTML.
+//
 // Plain JavaScript without a build step. The helpers are exported for tests.
 
 // The public repository sync stamps this with the app manifest's version.
-const VERSION = "0.14.0";
+const VERSION = "0.15.0";
 // crypto.randomUUID exists only on HTTPS or localhost; Home Assistant often
 // runs on plain http on the home network.
 function randomId() {
@@ -52,8 +58,6 @@ const INGRESS_URL = /^\/api\/hassio_ingress\/[A-Za-z0-9_-]{1,128}\/?$/;
 export const STRINGS = {
   en: {
     loading: "Loading…",
-    approvalsOne: "1 action waits for your approval.",
-    approvalsMany: "{0} actions wait for your approval.",
     openDaylight: "Open Daylight",
     writtenAt: "Written at {0}",
     updateFollows: " · update follows",
@@ -73,11 +77,29 @@ export const STRINGS = {
     noSession: "Home Assistant gave no ingress session.",
     notRunning: "Daylight is not running.",
     status: "Daylight answered with status {0}.",
+    overdue: "Overdue",
+    since: "since {0}",
+    tonight: "Tonight",
+    binsOut: "{0} out",
+    pickupTomorrow: "pickup tomorrow",
+    approval: "Approval",
+    waitsOne: "1 action waits",
+    waitsMany: "{0} actions wait",
+    inDaylight: "in Daylight",
+    review: "Review",
+    expires: "Expires",
+    onDate: "on {0}",
+    more: "+{0} more",
+    allDay: "all day",
+    dinner: "Dinner",
+    reminder: "Reminder",
+    chore: "Chore",
+    nothingPlanned: "Nothing planned",
+    calm: "Nothing special in the next three days.",
+    summaryAt: "Summary written at {0}",
   },
   de: {
     loading: "Wird geladen…",
-    approvalsOne: "1 Aktion wartet auf deine Freigabe.",
-    approvalsMany: "{0} Aktionen warten auf deine Freigabe.",
     openDaylight: "Daylight öffnen",
     writtenAt: "Geschrieben um {0}",
     updateFollows: " · Aktualisierung folgt",
@@ -98,6 +120,26 @@ export const STRINGS = {
     noSession: "Home Assistant hat keine Ingress-Sitzung gegeben.",
     notRunning: "Daylight läuft nicht.",
     status: "Daylight hat mit Status {0} geantwortet.",
+    overdue: "Überfällig",
+    since: "seit {0}",
+    tonight: "Heute Abend",
+    binsOut: "{0} rausstellen",
+    pickupTomorrow: "Abholung morgen",
+    approval: "Freigabe",
+    waitsOne: "1 Aktion wartet",
+    waitsMany: "{0} Aktionen warten",
+    inDaylight: "in Daylight",
+    review: "Prüfen",
+    expires: "Läuft ab",
+    onDate: "am {0}",
+    more: "+{0} weitere",
+    allDay: "ganztags",
+    dinner: "Abendessen",
+    reminder: "Erinnerung",
+    chore: "Aufgabe",
+    nothingPlanned: "Nichts geplant",
+    calm: "In den nächsten drei Tagen steht nichts Besonderes an.",
+    summaryAt: "Zusammenfassung von {0}",
   },
 };
 
@@ -116,7 +158,8 @@ export function cardLanguage(hass) {
 /** A text of the card in a language. */
 export function translate(language, key, value) {
   const text = (STRINGS[language] || STRINGS.en)[key] || STRINGS.en[key];
-  return value === undefined ? text : text.replace("{0}", String(value));
+  // A function keeps "$&" and "$'" in names as they are.
+  return value === undefined ? text : text.replace("{0}", () => String(value));
 }
 
 /** A request failure with the message that Daylight sent. */
@@ -304,29 +347,115 @@ export function clockTime(iso, locale) {
   }
 }
 
+/**
+ * A household day (YYYY-MM-DD) less than a week from `today` as its weekday
+ * ("Saturday"), other days as "9 October", in the user's locale.
+ */
+export function dayName(date, today, locale) {
+  const at = Date.parse(`${date}T12:00:00Z`);
+  if (Number.isNaN(at)) return "";
+  const from = Date.parse(`${today}T12:00:00Z`);
+  const options =
+    !Number.isNaN(from) && Math.abs(at - from) < 7 * 86_400_000
+      ? { timeZone: "UTC", weekday: "long" }
+      : { timeZone: "UTC", day: "numeric", month: "long" };
+  try {
+    return new Intl.DateTimeFormat(locale || [], options).format(at);
+  } catch {
+    return new Intl.DateTimeFormat([], options).format(at);
+  }
+}
+
+/** The board of a briefing; null from a server older than the board. */
+export function briefingBoard(briefing) {
+  const board = briefing && briefing.board;
+  return board &&
+    Array.isArray(board.attention) &&
+    Array.isArray(board.days) &&
+    board.days.every((day) => day && Array.isArray(day.rows))
+    ? board
+    : null;
+}
+
+const WEATHER_ICONS = {
+  rain: "mdi:weather-rainy",
+  lightning: "mdi:weather-lightning",
+  "lightning-rainy": "mdi:weather-lightning-rainy",
+  hail: "mdi:weather-hail",
+  snowy: "mdi:weather-snowy",
+  "snowy-rainy": "mdi:weather-snowy-rainy",
+  windy: "mdi:weather-windy",
+  "windy-variant": "mdi:weather-windy-variant",
+  hot: "mdi:thermometer-high",
+  frost: "mdi:snowflake",
+};
+
+// Accent texts mix the theme's accent with its text colour, so they keep
+// the contrast of the text in light and dark themes. Quiet text on a tinted
+// background mixes in some text colour for the same reason.
 const STYLE = `
 :host{display:block;min-width:0}
-ha-card{padding:16px;display:flex;flex-direction:column;gap:12px;height:100%;box-sizing:border-box;overflow-wrap:anywhere}
-.head{display:flex;align-items:center;gap:10px}
-.head ha-icon{color:var(--state-icon-color,var(--primary-color));--mdc-icon-size:24px}
-.title{flex:1;min-width:0}
-.title h2{margin:0;font-size:var(--ha-font-size-l,16px);font-weight:var(--ha-font-weight-medium,500);line-height:1.3;color:var(--primary-text-color)}
-.title p{margin:0;font-size:var(--ha-font-size-s,12px);color:var(--secondary-text-color)}
-ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-li{display:flex;gap:10px;align-items:baseline;color:var(--primary-text-color);font-size:var(--ha-font-size-m,14px);line-height:1.4}
-li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--primary-color);transform:translateY(-2px)}
-.quiet{margin:0;color:var(--secondary-text-color);font-size:var(--ha-font-size-s,12px)}
-.ask{display:flex;gap:8px}
-.ask input{flex:1;min-width:0;min-height:44px;box-sizing:border-box;font:inherit;font-size:max(16px,var(--ha-font-size-m,14px));color:var(--primary-text-color);background:var(--secondary-background-color,rgba(127,127,127,.1));border:1px solid var(--divider-color);border-radius:var(--ha-border-radius-md,8px);padding:10px 12px;outline:none}
-.ask input:focus{border-color:var(--primary-color)}
-button{flex-shrink:0;min-width:44px;min-height:44px;box-sizing:border-box;font:inherit;font-size:var(--ha-font-size-m,14px);border:none;border-radius:var(--ha-border-radius-md,8px);padding:8px 14px;cursor:pointer;background:var(--primary-color);color:var(--text-primary-color,#fff)}
+ha-card{--dl-accent-ink:color-mix(in srgb,var(--primary-color) 60%,var(--primary-text-color));--dl-quiet-ink:color-mix(in srgb,var(--secondary-text-color) 65%,var(--primary-text-color));--dl-warning:var(--warning-color,#ffa600);--dl-warning-ink:color-mix(in srgb,var(--dl-warning) 60%,var(--primary-text-color));padding:16px;display:flex;flex-direction:column;gap:14px;height:100%;box-sizing:border-box;container-type:inline-size;overflow-wrap:anywhere;color:var(--primary-text-color);font-size:var(--ha-font-size-l,16px);line-height:1.4}
+button{box-sizing:border-box;font:inherit;color:inherit;cursor:pointer}
 button:disabled{opacity:.5;cursor:default}
-button.link{background:none;color:var(--primary-color);padding:4px 0}
-.answer{border-top:1px solid var(--divider-color);padding-top:12px;display:flex;flex-direction:column;gap:8px}
-.answer .q{margin:0;color:var(--secondary-text-color);font-size:var(--ha-font-size-s,12px)}
-.answer .text{color:var(--primary-text-color);font-size:var(--ha-font-size-m,14px);line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto}
-.answer ha-markdown{white-space:normal}
-.actions{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+:focus-visible{outline:2px solid var(--primary-color);outline-offset:2px}
+.head{display:flex;align-items:center;gap:12px;min-height:44px}
+.head>ha-icon{flex:none;color:var(--state-icon-color,var(--primary-color));--mdc-icon-size:24px}
+.title{flex:1;min-width:0}
+.title h2{margin:0;font-size:var(--ha-font-size-xl,20px);font-weight:var(--ha-font-weight-medium,500);line-height:1.25}
+.title p{margin:1px 0 0;font-size:var(--ha-font-size-m,14px);color:var(--secondary-text-color)}
+.icon-btn{flex:none;width:44px;height:44px;margin:-6px -8px -6px 0;padding:0;border:none;border-radius:50%;background:transparent;color:var(--secondary-text-color);display:grid;place-items:center;--mdc-icon-size:24px}
+.icon-btn:hover{background:var(--secondary-background-color);color:var(--primary-text-color)}
+.summary{margin:0;line-height:1.45}
+.calm,.quiet{margin:0;color:var(--secondary-text-color)}
+.quiet{font-size:var(--ha-font-size-m,14px)}
+.attn{display:flex;flex-direction:column;gap:6px}
+@container (min-width:720px){.attn{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}}
+.notice{display:flex;align-items:center;gap:12px;min-height:44px;width:100%;box-sizing:border-box;margin:0;padding:6px 12px 6px 6px;border:none;border-radius:10px;text-align:left;line-height:1.35;background:color-mix(in srgb,var(--dl-warning) 11%,transparent)}
+.chip{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;--mdc-icon-size:20px;color:var(--dl-warning-ink);background:color-mix(in srgb,var(--dl-warning) 18%,transparent)}
+.notice .text{flex:1;min-width:0}
+.notice b{font-weight:var(--ha-font-weight-medium,500)}
+.notice .meta{display:block;font-size:var(--ha-font-size-m,14px);color:var(--dl-quiet-ink)}
+.notice.primary{background:color-mix(in srgb,var(--primary-color) 10%,transparent)}
+.notice.primary .chip{color:var(--dl-accent-ink);background:color-mix(in srgb,var(--primary-color) 16%,transparent)}
+.notice.neutral{background:var(--secondary-background-color,rgba(127,127,127,.1))}
+.notice.neutral .chip{color:var(--secondary-text-color);background:color-mix(in srgb,var(--secondary-text-color) 14%,transparent)}
+.go{flex:none;font-size:var(--ha-font-size-m,14px);font-weight:var(--ha-font-weight-medium,500);color:var(--dl-accent-ink)}
+.days{display:grid;grid-template-columns:minmax(0,1fr);gap:12px 28px}
+@container (min-width:600px){.days{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.col{display:flex;flex-direction:column;gap:8px;min-width:0}
+.day{display:grid;grid-template-columns:minmax(52px,max-content) minmax(0,1fr);column-gap:12px;align-content:start;min-width:0}
+.day h3{grid-column:1/-1;margin:0 0 2px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-height:26px;font-size:var(--ha-font-size-m,14px);font-weight:var(--ha-font-weight-medium,500);color:var(--secondary-text-color)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:1px 8px 1px 6px;border-radius:999px;font-size:13px;font-weight:400;color:var(--primary-text-color);background:var(--secondary-background-color,rgba(127,127,127,.1));--mdc-icon-size:15px}
+.row{grid-column:1/-1;display:grid;grid-template-columns:52px minmax(0,1fr);column-gap:12px;align-items:baseline;padding:5px 0;line-height:1.35}
+@supports (grid-template-columns:subgrid){.row{grid-template-columns:subgrid}}
+.t{font-variant-numeric:tabular-nums;font-weight:var(--ha-font-weight-medium,500);white-space:nowrap}
+.t.ad{font-size:13px;font-weight:400;color:var(--secondary-text-color)}
+.t ha-icon{--mdc-icon-size:18px;color:var(--secondary-text-color);vertical-align:-3px}
+.row.past{color:var(--secondary-text-color)}
+.row.past .t{font-weight:400}
+.row.next .t{color:var(--dl-accent-ink)}
+.suffix{font-size:var(--ha-font-size-m,14px);color:var(--secondary-text-color)}
+.day .none{grid-column:1/-1;padding:5px 0;color:var(--secondary-text-color)}
+.day .link{grid-column:1/-1;justify-self:start}
+button.link{min-width:44px;min-height:44px;margin:0;padding:0;border:none;background:none;text-align:left;color:var(--dl-accent-ink);font-size:var(--ha-font-size-m,14px);font-weight:var(--ha-font-weight-medium,500)}
+.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.items li{display:flex;gap:10px;align-items:baseline}
+.items li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--secondary-text-color);transform:translateY(-3px)}
+.answer{border-top:1px solid var(--divider-color);padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.answer .q{margin:0;font-size:var(--ha-font-size-m,14px);color:var(--secondary-text-color)}
+.answer .text{line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto}
+.actions{display:flex;flex-wrap:wrap;gap:0 20px;align-items:center}
+.ask{display:flex;align-items:center;gap:6px;min-height:48px;box-sizing:border-box;padding:2px 2px 2px 12px;border:1px solid transparent;border-radius:24px;background:var(--secondary-background-color,rgba(127,127,127,.1));cursor:text}
+.ask:focus-within{border-color:var(--primary-color)}
+.ask>ha-icon{flex:none;--mdc-icon-size:20px;color:var(--secondary-text-color)}
+.ask input{flex:1;min-width:0;min-height:44px;box-sizing:border-box;margin:0;padding:0;border:none;outline:none;background:transparent;font:inherit;font-size:max(16px,var(--ha-font-size-l,16px));color:var(--primary-text-color)}
+.ask input::placeholder{color:var(--dl-quiet-ink);opacity:1}
+.send{flex:none;width:44px;height:44px;padding:0;border:none;border-radius:50%;display:grid;place-items:center;background:transparent;color:var(--secondary-text-color);--mdc-icon-size:20px}
+.send.ready{background:color-mix(in srgb,var(--primary-color) 80%,var(--primary-text-color));color:var(--text-primary-color,#fff)}
+.meta-line{margin:0;font-size:var(--ha-font-size-s,12px);color:var(--secondary-text-color)}
+.ask+.meta-line{margin:-6px 0 0 14px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 `;
 
 /** `el("li", {className: "x"}, "text")`; children are text or elements. */
@@ -338,6 +467,7 @@ function el(tag, props, ...children) {
       node.append(child);
   return node;
 }
+const icon = (name) => el("ha-icon", { icon: name });
 
 const Base = globalThis.HTMLElement || class {};
 
@@ -350,8 +480,9 @@ export class DaylightCard extends Base {
       throw new Error(
         "app must be the Daylight app slug, e.g. abc123_daylight",
       );
+    // Without a title, the date is the heading. A set title stays the
+    // heading, with the date below it.
     this._config = {
-      title: "Daylight",
       show_prompt: true,
       ...config,
     };
@@ -372,7 +503,13 @@ export class DaylightCard extends Base {
     return translate(this._language || "en", key, value);
   }
   getCardSize() {
-    return 4;
+    const board = briefingBoard(this._briefing);
+    if (!board) return 4;
+    const rows = board.days.reduce(
+      (sum, day) => sum + day.rows.length,
+      board.attention.length,
+    );
+    return Math.min(12, 3 + Math.ceil(rows * 0.6));
   }
   getGridOptions() {
     return { columns: 12, min_columns: 6, rows: "auto" };
@@ -384,6 +521,7 @@ export class DaylightCard extends Base {
     clearInterval(this._timer);
     clearTimeout(this._poll);
     this._timer = undefined;
+    this._poll = undefined;
     document.removeEventListener("visibilitychange", this._onVisible);
   }
 
@@ -396,6 +534,9 @@ export class DaylightCard extends Base {
     // The interval also keeps the ingress session alive while the page is open.
     this._timer = setInterval(() => this._loadBriefing(), BRIEFING_EVERY_MS);
     this._loadBriefing();
+    // Back on the page: wait again for an answer that is on its way.
+    if (this._answer?.status === "waiting" && this._pending)
+      this._waitFor(this._pending.messageId, this._pending.startedAt);
   }
 
   _client() {
@@ -450,10 +591,16 @@ export class DaylightCard extends Base {
 
   _waitFor(messageId, startedAt) {
     clearTimeout(this._poll);
-    this._poll = setTimeout(async () => {
+    this._pending = { messageId, startedAt };
+    // Off the page, the card asks again when it is back (see _start).
+    if (!this.isConnected) return;
+    const poll = setTimeout(async () => {
       try {
         const reply = await this._client().request(`api/card/ask/${messageId}`);
+        // A reconnect or a newer question may have replaced this in-flight poll.
+        if (this._poll !== poll) return;
         if (reply.status === "done" || reply.status === "failed") {
+          this._pending = null;
           this._answer = {
             ...this._answer,
             status: reply.status,
@@ -466,7 +613,10 @@ export class DaylightCard extends Base {
       } catch {
         // Try again until the time is up.
       }
+      // The card left the page while it asked.
+      if (this._poll !== poll) return;
       if (Date.now() - startedAt > ANSWER_WAIT_MS) {
+        this._pending = null;
         this._answer = {
           ...this._answer,
           status: "failed",
@@ -477,10 +627,13 @@ export class DaylightCard extends Base {
       }
       this._waitFor(messageId, startedAt);
     }, ANSWER_POLL_MS);
+    this._poll = poll;
   }
 
   _openDaylight() {
-    const path = `/${(this._app && this._app.path) || ""}`;
+    const app =
+      this._app || findApp(this._hass && this._hass.panels, this._config.app);
+    const path = `/${(app && app.path) || ""}`;
     history.pushState(null, "", path);
     window.dispatchEvent(
       new CustomEvent("location-changed", { detail: { replace: false } }),
@@ -495,138 +648,359 @@ export class DaylightCard extends Base {
     const typed = root.querySelector("input")?.value ?? "";
     const focused = root.activeElement?.tagName === "INPUT";
     const b = this._briefing;
-    const sub = b ? [b.date, b.name].filter(Boolean).join(" · ") : "";
-    const card = el("ha-card");
-    card.append(
-      el(
-        "div",
-        { className: "head" },
-        el("ha-icon", { icon: "mdi:white-balance-sunny" }),
-        el(
-          "div",
-          { className: "title" },
-          el("h2", { textContent: this._config.title }),
-          sub ? el("p", { textContent: sub }) : null,
-        ),
-      ),
-    );
-    if (b) {
-      card.append(
-        el("ul", {}, ...b.items.map((item) => el("li", { textContent: item }))),
-      );
-      if (b.approvals > 0)
-        card.append(
-          el(
-            "div",
-            { className: "actions" },
-            el("span", {
-              className: "quiet",
-              textContent:
-                b.approvals === 1
-                  ? this._t("approvalsOne")
-                  : this._t("approvalsMany", b.approvals),
-            }),
-            el("button", {
-              className: "link",
-              textContent: this._t("openDaylight"),
-              onclick: () => this._openDaylight(),
-            }),
-          ),
-        );
-    } else if (!this._error)
+    const board = briefingBoard(b);
+    const card = el("ha-card", {}, this._head(b));
+    if (board) this._board(card, b, board);
+    else if (b) this._items(card, b);
+    else if (!this._error)
       card.append(
         el("p", { className: "quiet", textContent: this._t("loading") }),
       );
     if (this._error)
       card.append(el("p", { className: "quiet", textContent: this._error }));
-    else if (b && b.updatedAt)
+    // The answer stands above the box for the follow-up.
+    if (this._answer) card.append(this._answerBlock(this._answer));
+    if (this._config.show_prompt && b)
+      card.append(this._askBox(typed, focused));
+    if (!this._error && b && b.updatedAt)
       card.append(
         el("p", {
-          className: "quiet",
-          textContent: `${this._t("writtenAt", clockTime(b.updatedAt, cardLocale(this._hass)))}${b.stale ? this._t("updateFollows") : ""}`,
+          className: "meta-line",
+          textContent: `${this._t(board ? "summaryAt" : "writtenAt", clockTime(b.updatedAt, cardLocale(this._hass)))}${b.stale ? this._t("updateFollows") : ""}`,
         }),
       );
+    root.replaceChildren(el("style", { textContent: STYLE }), card);
+  }
 
-    if (this._config.show_prompt && b) {
-      const input = el("input", {
-        type: "text",
-        placeholder: this._conversationId
-          ? this._t("askFollowUp")
-          : this._t("askPlaceholder"),
-        value: typed,
-        maxLength: 4000,
-        enterKeyHint: "send",
-      });
-      input.setAttribute("aria-label", this._t("askLabel"));
-      const send = el("button", {
-        textContent: this._t("ask"),
-        disabled: this._answer?.status === "waiting",
-      });
-      const submit = () => {
-        const value = input.value;
-        input.value = "";
-        this._ask(value);
-      };
-      send.onclick = submit;
-      input.onkeydown = (event) => {
-        if (event.key === "Enter" && !event.isComposing) submit();
-      };
-      card.append(el("div", { className: "ask" }, input, send));
-      if (focused) queueMicrotask(() => input.focus());
-    }
-
-    const a = this._answer;
-    if (a) {
-      const answer = el(
-        "div",
-        { className: "answer" },
-        el("p", { className: "q", textContent: a.question }),
+  /** The date as the heading, the profile below, and a way into Daylight. */
+  _head(b) {
+    const title =
+      typeof this._config.title === "string" ? this._config.title.trim() : "";
+    const sub = b
+      ? (title ? [b.date, b.name] : [b.name]).filter(Boolean).join(" · ")
+      : "";
+    let open = null;
+    if (findApp(this._hass && this._hass.panels, this._config.app)) {
+      open = el(
+        "button",
+        {
+          className: "icon-btn",
+          type: "button",
+          title: this._t("openDaylight"),
+          onclick: () => this._openDaylight(),
+        },
+        icon("mdi:open-in-new"),
       );
-      if (a.status === "waiting")
-        answer.append(
-          el("div", {
-            className: "text",
-            textContent: this._t("thinking"),
-          }),
-        );
-      else {
-        const text = el("div", { className: "text" });
-        // Answers are plain text: model output must never fetch image URLs.
-        text.textContent = cardAnswerText(a.text);
-        answer.append(text);
-      }
-      if (a.approvals > 0)
-        answer.append(
-          el("p", {
-            className: "quiet",
-            textContent: this._t("needsApproval"),
-          }),
-        );
-      answer.append(
+      open.setAttribute("aria-label", this._t("openDaylight"));
+    }
+    return el(
+      "div",
+      { className: "head" },
+      icon("mdi:white-balance-sunny"),
+      el(
+        "div",
+        { className: "title" },
+        el("h2", { textContent: title || (b && b.date) || "Daylight" }),
+        sub ? el("p", { textContent: sub }) : null,
+      ),
+      open,
+    );
+  }
+
+  /** The summary line, what needs attention, then the days. */
+  _board(card, b, board) {
+    const locale = cardLocale(this._hass);
+    if (typeof b.summary === "string" && b.summary)
+      card.append(el("p", { className: "summary", textContent: b.summary }));
+    const notices = board.attention
+      .map((notice) => this._notice(notice, board.today, locale))
+      .filter(Boolean);
+    if (notices.length)
+      card.append(el("div", { className: "attn" }, ...notices));
+    if (board.more > 0) card.append(this._more(board.more));
+    const filled = (day) =>
+      day.rows.length > 0 ||
+      day.more > 0 ||
+      (Array.isArray(day.weather) && day.weather.length > 0);
+    const [today, ...later] = board.days;
+    if (!notices.length && !(board.more > 0) && !board.days.some(filled)) {
+      card.append(el("p", { className: "calm", textContent: this._t("calm") }));
+      return;
+    }
+    // A failed update leaves old rows; then no time is marked as next.
+    const live = !this._error;
+    const rest = later.filter(filled).map((day) => this._day(day, live));
+    card.append(
+      el(
+        "div",
+        { className: "days" },
+        today ? el("div", { className: "col" }, this._day(today, live)) : null,
+        rest.length ? el("div", { className: "col" }, ...rest) : null,
+      ),
+    );
+  }
+
+  _notice(notice, today, locale) {
+    if (!notice || typeof notice !== "object") return null;
+    const t = (key, value) => this._t(key, value);
+    const row = (tone, name, label, text, meta) =>
+      el(
+        "div",
+        { className: `notice ${tone}` },
+        el("span", { className: "chip" }, icon(name)),
         el(
-          "div",
-          { className: "actions" },
-          el("button", {
-            className: "link",
-            textContent: this._t("openInDaylight"),
-            onclick: () => this._openDaylight(),
-          }),
-          a.status === "waiting"
-            ? null
-            : el("button", {
-                className: "link",
-                textContent: this._t("newQuestion"),
-                onclick: () => {
-                  this._answer = null;
-                  this._conversationId = null;
-                  this._render();
-                },
-              }),
+          "span",
+          { className: "text" },
+          el("b", { textContent: label }),
+          ` ${text}`,
+          el("span", { className: "meta", textContent: meta }),
         ),
       );
-      card.append(answer);
+    switch (notice.kind) {
+      case "overdue":
+        return row(
+          "warning",
+          "mdi:alert-circle-outline",
+          t("overdue"),
+          String(notice.title),
+          t("since", dayName(notice.since, today, locale)),
+        );
+      case "bins":
+        return row(
+          "warning",
+          "mdi:trash-can-outline",
+          t("tonight"),
+          t("binsOut", notice.title),
+          t("pickupTomorrow"),
+        );
+      case "document":
+        return row(
+          "neutral",
+          "mdi:file-document-outline",
+          t("expires"),
+          String(notice.title),
+          t("onDate", dayName(notice.date, today, locale)),
+        );
+      case "approvals": {
+        const count = Number(notice.count) || 0;
+        if (count < 1) return null;
+        // Approvals stay in Daylight: the card only leads there.
+        return el(
+          "button",
+          {
+            className: "notice primary",
+            type: "button",
+            onclick: () => this._openDaylight(),
+          },
+          el("span", { className: "chip" }, icon("mdi:shield-check-outline")),
+          el(
+            "span",
+            { className: "text" },
+            el("b", { textContent: t("approval") }),
+            ` ${count === 1 ? t("waitsOne") : t("waitsMany", count)}`,
+            el("span", { className: "meta", textContent: t("inDaylight") }),
+          ),
+          el("span", { className: "go", textContent: t("review") }),
+        );
+      }
+      default:
+        return null;
     }
-    root.replaceChildren(el("style", { textContent: STYLE }), card);
+  }
+
+  _day(day, live) {
+    const heading = el(
+      "h3",
+      {},
+      el("span", { textContent: String(day.label) }),
+    );
+    for (const note of Array.isArray(day.weather) ? day.weather : [])
+      heading.append(
+        el(
+          "span",
+          { className: "tag" },
+          icon(WEATHER_ICONS[note.kind] || "mdi:alert-outline"),
+          String(note.text),
+        ),
+      );
+    const section = el("section", { className: "day" }, heading);
+    for (const row of day.rows) {
+      const line = this._row(row, live);
+      if (line) section.append(line);
+    }
+    if (!day.rows.length && !(day.more > 0))
+      section.append(
+        el("span", {
+          className: "none",
+          textContent: this._t("nothingPlanned"),
+        }),
+      );
+    if (day.more > 0) section.append(this._more(day.more));
+    return section;
+  }
+
+  _row(row, live) {
+    if (!row || typeof row.title !== "string") return null;
+    let time = el("span", { className: "t" });
+    let label = null;
+    let suffix = null;
+    if (row.kind === "event" && !row.time)
+      time = el("span", { className: "t ad", textContent: this._t("allDay") });
+    else if (row.kind === "event" || row.kind === "reminder")
+      time.textContent = String(row.time);
+    else if (row.kind === "chore") {
+      time.append(icon("mdi:checkbox-blank-outline"));
+      label = this._t("chore");
+    } else if (row.kind === "bins") time.append(icon("mdi:trash-can-outline"));
+    else if (row.kind === "dinner")
+      time.append(icon("mdi:silverware-fork-knife"));
+    if (row.kind === "reminder") suffix = this._t("reminder");
+    if (row.kind === "dinner") suffix = this._t("dinner");
+    const state =
+      row.state === "past"
+        ? " past"
+        : row.state === "next" && live
+          ? " next"
+          : "";
+    return el(
+      "div",
+      { className: `row${state}` },
+      time,
+      el(
+        "span",
+        { className: "x" },
+        label
+          ? el("span", { className: "sr", textContent: `${label}: ` })
+          : null,
+        row.title,
+        suffix
+          ? el("span", { className: "suffix", textContent: ` · ${suffix}` })
+          : null,
+      ),
+    );
+  }
+
+  /** Entries that the card leaves out are in Daylight. */
+  _more(count) {
+    return el("button", {
+      className: "link",
+      type: "button",
+      textContent: this._t("more", count),
+      onclick: () => this._openDaylight(),
+    });
+  }
+
+  /** The list of a server older than the board. */
+  _items(card, b) {
+    const items = Array.isArray(b.items) ? b.items : [];
+    card.append(
+      el(
+        "ul",
+        { className: "items" },
+        ...items.map((item) => el("li", { textContent: String(item) })),
+      ),
+    );
+    // The plain list already says that actions wait.
+    if (b.approvals > 0 && b.source !== "plain")
+      card.append(
+        el(
+          "div",
+          { className: "attn" },
+          this._notice({ kind: "approvals", count: b.approvals }),
+        ),
+      );
+  }
+
+  _answerBlock(a) {
+    const text = el("div", { className: "text" });
+    // Answers are plain text: model output must never fetch image URLs.
+    text.textContent =
+      a.status === "waiting" ? this._t("thinking") : cardAnswerText(a.text);
+    return el(
+      "div",
+      { className: "answer" },
+      el("p", { className: "q", textContent: a.question }),
+      text,
+      a.approvals > 0
+        ? el("p", {
+            className: "quiet",
+            textContent: this._t("needsApproval"),
+          })
+        : null,
+      el(
+        "div",
+        { className: "actions" },
+        el("button", {
+          className: "link",
+          type: "button",
+          textContent: this._t("openInDaylight"),
+          onclick: () => this._openDaylight(),
+        }),
+        a.status === "waiting"
+          ? null
+          : el("button", {
+              className: "link",
+              type: "button",
+              textContent: this._t("newQuestion"),
+              onclick: () => {
+                this._answer = null;
+                this._conversationId = null;
+                this._render();
+              },
+            }),
+      ),
+    );
+  }
+
+  /** The question box. The send button takes the accent once there is text. */
+  _askBox(typed, focused) {
+    const input = el("input", {
+      type: "text",
+      placeholder: this._conversationId
+        ? this._t("askFollowUp")
+        : this._t("askPlaceholder"),
+      value: typed,
+      maxLength: 4000,
+      enterKeyHint: "send",
+    });
+    input.setAttribute("aria-label", this._t("askLabel"));
+    const send = el(
+      "button",
+      {
+        className: typed.trim() ? "send ready" : "send",
+        type: "button",
+        title: this._t("ask"),
+        disabled: this._answer?.status === "waiting",
+      },
+      icon("mdi:send"),
+    );
+    send.setAttribute("aria-label", this._t("ask"));
+    input.oninput = () =>
+      send.classList.toggle("ready", input.value.trim() !== "");
+    const submit = () => {
+      // While an answer is on its way, the typed text stays in the box.
+      if (!input.value.trim() || this._answer?.status === "waiting") return;
+      const value = input.value;
+      input.value = "";
+      send.classList.remove("ready");
+      this._ask(value);
+    };
+    send.onclick = submit;
+    input.onkeydown = (event) => {
+      if (event.key === "Enter" && !event.isComposing) submit();
+    };
+    const box = el(
+      "div",
+      { className: "ask" },
+      icon("mdi:message-outline"),
+      input,
+      send,
+    );
+    box.onclick = (event) => {
+      if (!send.contains(event.target)) input.focus();
+    };
+    if (focused) queueMicrotask(() => input.focus());
+    return box;
   }
 }
 
