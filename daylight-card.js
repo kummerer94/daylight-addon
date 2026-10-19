@@ -35,7 +35,7 @@ export function cardAnswerText(text) {
 // Plain JavaScript without a build step. The helpers are exported for tests.
 
 // The public repository sync stamps this with the app manifest's version.
-const VERSION = "0.15.1";
+const VERSION = "0.15.2";
 // crypto.randomUUID exists only on HTTPS or localhost; Home Assistant often
 // runs on plain http on the home network.
 function randomId() {
@@ -91,6 +91,7 @@ export const STRINGS = {
     onDate: "on {0}",
     more: "+{0} more",
     allDay: "all day",
+    lunch: "Lunch",
     dinner: "Dinner",
     reminder: "Reminder",
     chore: "Chore",
@@ -134,6 +135,7 @@ export const STRINGS = {
     onDate: "am {0}",
     more: "+{0} weitere",
     allDay: "ganztags",
+    lunch: "Mittagessen",
     dinner: "Abendessen",
     reminder: "Erinnerung",
     chore: "Aufgabe",
@@ -852,10 +854,10 @@ export class DaylightCard extends Base {
       time.append(icon("mdi:checkbox-blank-outline"));
       label = this._t("chore");
     } else if (row.kind === "bins") time.append(icon("mdi:trash-can-outline"));
-    else if (row.kind === "dinner")
+    else if (row.kind === "lunch" || row.kind === "dinner")
       time.append(icon("mdi:silverware-fork-knife"));
     if (row.kind === "reminder") suffix = this._t("reminder");
-    if (row.kind === "dinner") suffix = this._t("dinner");
+    if (row.kind === "lunch" || row.kind === "dinner") suffix = this._t(row.kind);
     const state =
       row.state === "past"
         ? " past"
