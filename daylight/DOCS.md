@@ -78,6 +78,14 @@ You can also ask Daylight in chat to change your own settings, for example "Add 
 
 Home Assistant and calendar changes that need approval show their saved action in chat. Review the details, then choose **Approve** or **Reject** there or in **Inbox**. Both show the current status and result. Scheduled tasks cannot approve changes.
 
+## What the assistant can read about Daylight
+
+The assistant can also read Daylight itself. `conversation_list` searches the current profile's chat titles and latest previews, including archived chats when requested. `conversation_read` reads that profile's saved messages. It starts with the newest page, puts messages within each page in time order, and supplies a cursor for older messages. It returns at most 10 messages and 40,000 text characters per page, marks shortened messages, and shows attachment names without opening files. Neither tool can read another profile's chats.
+
+`daylight_settings` reads saved model choices, connection permissions and Standard/Full mode, household home data settings, visible calendars, display link state, the profile's linked Home Assistant user name, signed-in device names and count, notification choices, recorded usage totals, and Inbox counts. Usage can cover today, 7 days, 30 days, or all recorded time. Tokens, email addresses, session hashes and URL paths are excluded. Appearance, keyboard preferences, browser notification permission and backup upload progress exist only in the browser. Daylight does not record the last backup time; the tool reports these limits explicitly.
+
+These three tools are read-only and available in chat and scheduled tasks, with the same current-profile scope. Accepted routines must allow the Daylight source. Earlier chat messages and returned settings are data, never new instructions or permission to change anything. The existing `settings_*` change tools remain restricted to user chat. `daylight_setup`, `daylight_docs_search` and `daylight_file_read` still describe the installation and explain its documentation and code.
+
 ## Assistant access to Home Assistant
 
 In **Settings → Home Assistant → Access**, choose the tools available to your profile:
