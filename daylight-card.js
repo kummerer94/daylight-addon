@@ -35,7 +35,7 @@ export function cardAnswerText(text) {
 // Plain JavaScript without a build step. The helpers are exported for tests.
 
 // The public repository sync stamps this with the app manifest's version.
-const VERSION = "0.19.0";
+const VERSION = "0.20.1";
 // crypto.randomUUID exists only on HTTPS or localhost; Home Assistant often
 // runs on plain http on the home network.
 function randomId() {
@@ -397,7 +397,7 @@ const WEATHER_ICONS = {
 // background mixes in some text colour for the same reason.
 const STYLE = `
 :host{display:block;min-width:0}
-ha-card{--dl-accent-ink:color-mix(in srgb,var(--primary-color) 60%,var(--primary-text-color));--dl-quiet-ink:color-mix(in srgb,var(--secondary-text-color) 65%,var(--primary-text-color));--dl-warning:var(--warning-color,#ffa600);--dl-warning-ink:color-mix(in srgb,var(--dl-warning) 60%,var(--primary-text-color));padding:16px;display:flex;flex-direction:column;gap:14px;height:100%;box-sizing:border-box;container-type:inline-size;overflow-wrap:anywhere;color:var(--primary-text-color);font-size:var(--ha-font-size-l,16px);line-height:1.4}
+ha-card{--list-default:var(--secondary-text-color);--list-green:color-mix(in srgb,#3d6a3f 65%,var(--primary-text-color));--list-blue:color-mix(in srgb,#326ca6 65%,var(--primary-text-color));--list-purple:color-mix(in srgb,#7b4ca0 65%,var(--primary-text-color));--list-orange:color-mix(in srgb,#a64b12 65%,var(--primary-text-color));--list-pink:color-mix(in srgb,#ac4274 65%,var(--primary-text-color));--dl-accent-ink:color-mix(in srgb,var(--primary-color) 60%,var(--primary-text-color));--dl-quiet-ink:color-mix(in srgb,var(--secondary-text-color) 65%,var(--primary-text-color));--dl-warning:var(--warning-color,#ffa600);--dl-warning-ink:color-mix(in srgb,var(--dl-warning) 60%,var(--primary-text-color));padding:16px;display:flex;flex-direction:column;gap:14px;height:100%;box-sizing:border-box;container-type:inline-size;overflow-wrap:anywhere;color:var(--primary-text-color);font-size:var(--ha-font-size-l,16px);line-height:1.4}
 button{box-sizing:border-box;font:inherit;color:inherit;cursor:pointer}
 button:disabled{opacity:.5;cursor:default}
 :focus-visible{outline:2px solid var(--primary-color);outline-offset:2px}
@@ -468,6 +468,42 @@ function el(tag, props, ...children) {
     if (child !== null && child !== undefined && child !== false)
       node.append(child);
   return node;
+}
+const LIST_ICONS = {
+  list: "mdi:format-list-checks",
+  scissors: "mdi:content-cut",
+  palette: "mdi:palette-outline",
+  suitcase: "mdi:bag-suitcase-outline",
+  house: "mdi:home-outline",
+  sparkles: "mdi:creation",
+  basket: "mdi:basket-outline",
+  gift: "mdi:gift-outline",
+  book: "mdi:book-open-variant",
+  plane: "mdi:airplane",
+  heart: "mdi:heart-outline",
+  leaf: "mdi:leaf",
+  wrench: "mdi:wrench-outline",
+};
+const LIST_COLOURS = {
+  default: "var(--list-default)",
+  green: "var(--list-green)",
+  blue: "var(--list-blue)",
+  purple: "var(--list-purple)",
+  orange: "var(--list-orange)",
+  pink: "var(--list-pink)",
+};
+function listMark(list) {
+  if (!list || typeof list.name !== "string") return null;
+  const mark = el(
+    "span",
+    { title: list.name, className: "list-mark" },
+    icon(LIST_ICONS[list.icon] || LIST_ICONS.list),
+  );
+  mark.style.borderInlineStart = `3px solid ${LIST_COLOURS[list.colour] || LIST_COLOURS.default}`;
+  // Screen readers name the list; the icon alone says nothing.
+  mark.setAttribute("role", "img");
+  mark.setAttribute("aria-label", list.name);
+  return mark;
 }
 const icon = (name) => el("ha-icon", { icon: name });
 
@@ -745,11 +781,11 @@ export class DaylightCard extends Base {
   _notice(notice, today, locale) {
     if (!notice || typeof notice !== "object") return null;
     const t = (key, value) => this._t(key, value);
-    const row = (tone, name, label, text, meta) =>
+    const row = (tone, name, label, text, meta, list) =>
       el(
         "div",
         { className: `notice ${tone}` },
-        el("span", { className: "chip" }, icon(name)),
+        el("span", { className: "chip" }, listMark(list) || icon(name)),
         el(
           "span",
           { className: "text" },
@@ -760,12 +796,21 @@ export class DaylightCard extends Base {
       );
     switch (notice.kind) {
       case "overdue":
+        // A phone has no hover: the list name is written next to the date.
         return row(
           "warning",
           "mdi:alert-circle-outline",
           t("overdue"),
           String(notice.title),
-          t("since", dayName(notice.since, today, locale)),
+          [
+            t("since", dayName(notice.since, today, locale)),
+            notice.list && typeof notice.list.name === "string"
+              ? notice.list.name
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" · "),
+          notice.list,
         );
       case "bins":
         return row(
@@ -851,13 +896,14 @@ export class DaylightCard extends Base {
     else if (row.kind === "event" || row.kind === "reminder")
       time.textContent = String(row.time);
     else if (row.kind === "chore") {
-      time.append(icon("mdi:checkbox-blank-outline"));
-      label = this._t("chore");
+      time.append(listMark(row.list) || icon("mdi:checkbox-blank-outline"));
+      label = row.list?.name || this._t("chore");
     } else if (row.kind === "bins") time.append(icon("mdi:trash-can-outline"));
     else if (row.kind === "lunch" || row.kind === "dinner")
       time.append(icon("mdi:silverware-fork-knife"));
     if (row.kind === "reminder") suffix = this._t("reminder");
-    if (row.kind === "lunch" || row.kind === "dinner") suffix = this._t(row.kind);
+    if (row.kind === "lunch" || row.kind === "dinner")
+      suffix = this._t(row.kind);
     const state =
       row.state === "past"
         ? " past"

@@ -43,6 +43,7 @@ Daylight can open full screen from your Home Screen at its own HTTPS address. Ta
    ```
 
    `home_assistant_url` is the Home Assistant address Safari can reach over Tailscale. This HA instance uses `http://100.124.80.51:8123`; it is not shared through Tailscale Serve. HTTP here travels over the encrypted Tailscale connection. Open it on the iPhone first. Give only the origin, without a path. Daylight's `direct_origin` must use HTTPS. Both options must be set together. Leave both empty to disable direct access.
+
 4. In Daylight's **Network** settings, leave **8100/tcp** mapped to host port **8100**. Add this entry to the Tailscale app's `services` list, keeping any existing services:
 
    ```yaml
@@ -54,6 +55,7 @@ Daylight can open full screen from your Home Screen at its own HTTPS address. Ta
    ```
 
    Restart the Tailscale app and approve this host for `svc:daylight` in the Tailscale admin console's **Services** page. Allow the household's users to access this service in your tailnet policy. See the [Tailscale app Services instructions](https://github.com/hassio-addons/addon-tailscale/blob/main/tailscale/DOCS.md#option-services). The target is the host's mapped port and survives app container IP changes and reboots. If you deliberately change the host port, change the target to match.
+
 5. On the iPhone, connect Tailscale. In **Safari**, open the Daylight HTTPS address. Select **Share → Add to Home Screen** and keep **Open as Web App** enabled if offered.
 6. Open **Daylight from its new Home Screen icon**, then select **Sign in with Home Assistant**. Use your own HA account. Sign in inside the installed app even if you already signed in in Safari. Each HA user opens the same profile as through ingress. If no profile matches, choose or create yours.
 7. In **Settings → Signed-in devices**, end a lost device's sign-in with **Revoke**. **Sign out of Daylight** ends this device's sign-in. Devices stay signed in for 180 days after use; this lifetime renews at most once an hour. At most 20 devices are retained for each HA account.
@@ -78,13 +80,23 @@ You can also ask Daylight in chat to change your own settings, for example "Add 
 
 Home Assistant and calendar changes that need approval show their saved action in chat. Review the details, then choose **Approve** or **Reject** there or in **Inbox**. Both show the current status and result. Scheduled tasks cannot approve changes.
 
+## Chat and Inbox
+
+- **Message actions.** Each message has one **⋯** button. A long press on a message opens the same menu: Copy, Quote, Edit (your last message), Ask again (a reply) and Fork from here. The newest reply also shows Copy. **Ask again** and **Edit** put the text back in the message box; they never send it. If the reply to your last message still waits in the queue, Edit removes the queued message, so the edited text replaces it. A finished turn stays in the chat; the edited text is sent as a new message, because the assistant already saw the first one.
+- **Stop.** A running chat reply has **Stop**. Steps that already ran stay done. A stopped reply says so in one line. Background tasks and routine steps cannot be stopped here.
+- **Keyboard and scrolling.** On the phone, the end of the chat stays above the keyboard. A round arrow goes back to the end of the chat; it says **New reply** when a reply finished out of view. A new approval that is taller than the screen shows from its top.
+- **Connection.** Without a connection, the message box says so and Send waits. A message that could not go out is sent again once when the connection is back. Live updates reconnect by themselves. Drafts are kept in this browser for each profile and chat, also when the phone stops the app.
+- **Unread chats.** A reply from a background task or a routine, or a chat reply that ended while Daylight was not shown, makes its chat unread. The chat list shows a dot, and the Chat tab and the list button show the number. Opening the chat marks it read on all devices of the profile. Each profile has its own unread chats.
+- **Search** in the chat list finds the text of every message, not only titles, and shows the line that matched.
+- **Inbox.** **Needs you** lists the approvals to decide, then actions to check (running, failed or unclear in the last 7 days). **New** lists results and notices that you did not read yet: each result opens its chat with one tap and shows a short plain-text preview. One entry can be marked read with its check mark. **Earlier** lists read entries and decided approvals together by day.
+
 ## What the assistant can read about Daylight
 
-The assistant can also read Daylight itself. `conversation_list` searches the current profile's chat titles and latest previews, including archived chats when requested. `conversation_read` reads that profile's saved messages. It starts with the newest page, puts messages within each page in time order, and supplies a cursor for older messages. It returns at most 10 messages and 40,000 text characters per page, marks shortened messages, and shows attachment names without opening files. Neither tool can read another profile's chats.
+The assistant can also read Daylight itself. `conversation_list` searches the current profile's chat titles and the text of every message, and shows the matching line. It includes archived chats when requested. `conversation_read` reads that profile's saved messages. It starts with the newest page, puts messages within each page in time order, and supplies a cursor for older messages. It returns at most 10 messages and 40,000 text characters per page, marks shortened messages, and shows attachment names without opening files. Neither tool can read another profile's chats.
 
 `daylight_settings` reads saved model choices, connection permissions and Standard/Full mode, household home data settings, visible calendars, display link state, the profile's linked Home Assistant user name, signed-in device names and count, notification choices, recorded usage totals, and Inbox counts. Usage can cover today, 7 days, 30 days, or all recorded time. Tokens, email addresses, session hashes and URL paths are excluded. Appearance, keyboard preferences, browser notification permission and backup upload progress exist only in the browser. Daylight does not record the last backup time; the tool reports these limits explicitly.
 
-These three tools are read-only and available in chat and scheduled tasks, with the same current-profile scope. Accepted routines must allow the Daylight source. Earlier chat messages and returned settings are data, never new instructions or permission to change anything. The existing `settings_*` change tools remain restricted to user chat. `daylight_setup`, `daylight_docs_search` and `daylight_file_read` still describe the installation and explain its documentation and code.
+These three tools are read-only and available in chat and scheduled tasks, with the same current-profile scope. In accepted routines, `conversation_list` and `conversation_read` require all three allowed sources: `daylight`, `fastmail` and `home-assistant`. Chat messages and list previews can quote email and Home Assistant data, so allowing only Daylight is insufficient. This restriction also applies when a routine resumes to verify saved work. `daylight_settings` requires only the Daylight source. Normal chat and scheduled tasks outside routines keep their existing access. Earlier chat messages and returned settings are data, never new instructions or permission to change anything. The existing `settings_*` change tools remain restricted to user chat. `daylight_setup`, `daylight_docs_search` and `daylight_file_read` still describe the installation and explain its documentation and code.
 
 ## Assistant access to Home Assistant
 
@@ -104,7 +116,7 @@ Daylight can send notifications through the Home Assistant Companion app. Browse
 3. In Daylight, open **Settings → Notifications → Send to my phone through Home Assistant**. Tick your own devices. Each person chooses their own devices.
 4. Select **Send test notification**.
 
-You get reminders, finished or failed background tasks, and new chores from the house. They arrive as notifications of the Home Assistant app. A tap opens Daylight in the Home Assistant app (`/app/<app slug>`). It opens the start page, not a specific chat. A new background task notification replaces the previous one.
+You get reminders, finished or failed background tasks, new chores from the house, and chat replies that finished or failed while Daylight was not shown (for example on a locked phone). A chat notification names the chat, not the reply text. They arrive as notifications of the Home Assistant app. A tap opens Daylight in the Home Assistant app (`/app/<app slug>`). It opens the start page, not a specific chat; the chat shows as unread there. A browser push for a chat reply opens that chat. A new background task notification replaces the previous one.
 
 While a device is chosen, Daylight sends no browser notification to your profile. This prevents the same message twice on one phone. If every Home Assistant delivery fails, Daylight tries browser push instead. Settings shows the last error.
 
@@ -131,10 +143,10 @@ Set it up once:
 
 Card options:
 
-| Option        | Default         | Meaning                                                                         |
-| ------------- | --------------- | ------------------------------------------------------------------------------- |
-| `title`       | none            | A heading instead of the date; the date then shows below it                     |
-| `show_prompt` | `true`          | `false` hides the question box                                                  |
+| Option        | Default         | Meaning                                                                       |
+| ------------- | --------------- | ----------------------------------------------------------------------------- |
+| `title`       | none            | A heading instead of the date; the date then shows below it                   |
+| `show_prompt` | `true`          | `false` hides the question box                                                |
 | `app`         | found by itself | The app slug, such as `a1b2c3d4_daylight`, if the card does not find Daylight |
 
 How it works:
@@ -158,12 +170,12 @@ The older way to show Daylight on a dashboard. Use the dashboard card above inst
 
 ## Options
 
-| Option      | Default         | Meaning                                                         |
-| ----------- | --------------- | --------------------------------------------------------------- |
-| `time_zone` | `Europe/Berlin` | Household time zone for chore days, daily task times, and dates |
-| `model`     | `gpt-6.1-sol`   | The ChatGPT model that the assistant uses                       |
-| `direct_origin` | empty | Daylight HTTPS origin for the optional iPhone app |
-| `home_assistant_url` | empty | HA HTTP or HTTPS origin the phone reaches for sign-in |
+| Option               | Default         | Meaning                                                         |
+| -------------------- | --------------- | --------------------------------------------------------------- |
+| `time_zone`          | `Europe/Berlin` | Household time zone for chore days, daily task times, and dates |
+| `model`              | `gpt-6.1-sol`   | The ChatGPT model that the assistant uses                       |
+| `direct_origin`      | empty           | Daylight HTTPS origin for the optional iPhone app               |
+| `home_assistant_url` | empty           | HA HTTP or HTTPS origin the phone reaches for sign-in           |
 
 Restart the app after you change an option.
 
@@ -240,7 +252,7 @@ On a PC, the server uses about 130 MB at rest and about 160 MB under heavy synth
 - Large photos are made smaller on the phone before upload (2048 px, JPEG). A file can have at most 10 MB; a message can have 5 files.
 - A scanned PDF without text cannot be read. Send photos of the pages instead.
 - Files are stored in `/data/attachments`, so backups include them. Only the profile that sent a file can see it.
-- **Add photo** puts photos into the note of a Groceries or Chores item, or into a Markdown document. The iPhone offers the camera and the photo library. Everybody who can see the item or the document sees its photos. Photos are in `/data/attachments` too, so backups include them.
+- **Add photo** puts photos into the note of a visible list item, or into a Markdown document. The iPhone offers the camera and the photo library. Everybody who can see the item or the document sees its photos. Photos are in `/data/attachments` too, so backups include them.
 
 ## Images from chat
 
@@ -250,9 +262,40 @@ Quality defaults to low. Ask for medium or high quality, or say "Regenerate that
 
 Image generation is experimental and depends on the account and conversation model. If generation is interrupted, Daylight never sends that request again automatically. A saved image remains available; otherwise, send a new message to try again.
 
+## Groceries in Apple Reminders
+
+Groceries can stay the same as one Apple Reminders list, so Siri and the Reminders app keep working. Home Assistant's iCloud integration connects the list; Daylight changes it through Home Assistant.
+
+1. Set up the iCloud integration in Home Assistant with the Apple account that owns the list. Home Assistant shows only lists of that account, also when they are shared.
+2. In Daylight, open **Settings → Household → Connect Groceries to a Home Assistant list**. Every profile can do this.
+3. Select **Choose a list**, choose the to-do list, for example `todo.<account>_einkauf`, and select **Preview**.
+4. Check the preview. Apple reminders become Daylight items, unless you match them with an existing item. Items with the same name are not matched by themselves. Existing Daylight items stay only in Daylight unless you tick them. Select **Connect**.
+
+Daylight then adds, renames, edits notes, completes, reopens and deletes the linked items in Apple Reminders. New items from the iPhone or Watch arrive after some minutes, because Home Assistant checks iCloud every five minutes. They show **via Apple Reminders**. Sections, order, photos and who is assigned stay only in Daylight. Use **Sections** on the Groceries list to sort items. Due dates in Apple Reminders stay as they are.
+
+Each item shows when a change waits, failed, is uncertain, or kept the Apple version because both sides changed at the same time. Settings shows the last successful check and the items that need a decision. **Disconnect** stops all waiting and future changes. Items and history stay in Daylight.
+
 ## Known limits
 
 - Fastmail sign-in needs a browser with an address bar so you can copy the return address. If the companion app hides it, open Home Assistant in your phone or computer browser.
 - Browser push notifications do not work over plain http. Use **Send to my phone through Home Assistant** instead.
-- A notification tap opens Daylight's start page in the Home Assistant app, not a specific chat.
+- A notification tap opens Daylight's start page in the Home Assistant app, not a specific chat. Browser push opens the chat of a chat reply.
+- A phone on its side, and any window lower than 500 pixels, uses the phone layout.
+- Groceries in Apple Reminders: changes from the iPhone take some minutes. Home Assistant does not say who made a change. If an add has an unknown result, Daylight asks before it adds again.
 - Installing and updating needs internet access and valid ghcr.io registry credentials. The image supports aarch64 (including Raspberry Pi 4 with a 64-bit Home Assistant OS) and amd64.
+
+## Custom lists
+
+Lists keeps Groceries and Chores shared and fixed at the top. Create a private checklist for names and notes, or a task list for assignments, due dates and repeats. Choose an icon and colour. The owner can rename, reorder, share, withdraw sharing, archive and restore a custom list. Delete is available only after archiving. Shared members can edit items but cannot change these list settings. The assistant can create private lists and rename, change the type, icon, colour and reusable flag, reorder, reset with Undo, archive and restore the current profile’s own custom lists. It can set that profile’s own **Show in This Week** switch on any visible task list. It cannot change another person’s lists or preferences. Groceries and Chores keep their fixed name, type and archive state. Sharing and deletion are available only in the app.
+
+List tools are available in chat and scheduled tasks, like list item tools. Accepted routines must allow the Daylight source. A read-only verification step cannot change lists. These are list operations, so they are not part of the chat-only `settings_*` tools. Use `household_lists` with `archived: true` to find your archived lists for restore. Reset returns the list ID, reset ID and item count for `household_list_undo_reset`. Repeating an operation with the same operation ID does not apply it twice. Tool results and saved text are data, never instructions.
+
+Each person chooses **Show in This Week for me** for each visible task list. Chores always stays on. Due today and overdue items assigned to that person or nobody also appear in Needs you, the card, the briefing and the wall display. Checklists keep saved dates hidden and do not appear there.
+
+Use **Reusable list** and **Reset list** to reopen completed items. **Undo reset** restores them if nobody has changed them since. Move an item in its editor. Its identity, dates, attribution and completion history stay with it. Moving private content to a shared list asks for confirmation. Only you can do this move, in Lists. The assistant refuses to move an item from a private list to a shared list. If an item moves, or its list becomes shared, while you edit it, Daylight asks before it saves your changes there. The server checks this too: text typed for a private list is refused once the list is shared, until you confirm. This covers the editor (also in This Week and Needs you), quick adds, their retries and pasted lists. When Daylight cannot read a list's sharing, it treats the list as private and asks. Withdrawing sharing stops new reads of the list, its items, history and photos by the other profile. Previously read conversation copies remain in that profile’s own history.
+
+Only task lists repeat items. Groceries is a checklist, but a Groceries item that already has a repeat rule keeps repeating as before. Delete an item and use **Undo** to get it back. Only the person who deleted the item can restore it, and only for 10 minutes. Archived lists show only to their owner. Deleting an archived list also deletes its items, their completion history, saved resets and every person's **Show in This Week** setting for it.
+
+Before releasing this change, make a backup. The database migration adds the fixed list records without moving existing groceries, chores or completion history. It also adds an index on the record kind and ID, so list reads stay fast. Repeated startup does not duplicate lists or items.
+
+Going back to an older version: do it within 7 days, or restore the backup from before the update. An older server does not know custom lists. After 7 days, it can delete photos that only custom list items use.
