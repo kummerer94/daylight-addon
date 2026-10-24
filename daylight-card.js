@@ -35,7 +35,7 @@ export function cardAnswerText(text) {
 // Plain JavaScript without a build step. The helpers are exported for tests.
 
 // The public repository sync stamps this with the app manifest's version.
-const VERSION = "0.22.0";
+const VERSION = "0.23.0";
 // crypto.randomUUID exists only on HTTPS or localhost; Home Assistant often
 // runs on plain http on the home network.
 function randomId() {
@@ -77,7 +77,7 @@ export const STRINGS = {
     noSession: "Home Assistant gave no ingress session.",
     notRunning: "Daylight is not running.",
     status: "Daylight answered with status {0}.",
-    overdue: "Overdue",
+    overdue: "Late",
     since: "since {0}",
     tonight: "Tonight",
     binsOut: "{0} out",
@@ -121,7 +121,7 @@ export const STRINGS = {
     noSession: "Home Assistant hat keine Ingress-Sitzung gegeben.",
     notRunning: "Daylight läuft nicht.",
     status: "Daylight hat mit Status {0} geantwortet.",
-    overdue: "Überfällig",
+    overdue: "Verspätet",
     since: "seit {0}",
     tonight: "Heute Abend",
     binsOut: "{0} rausstellen",
@@ -798,8 +798,8 @@ export class DaylightCard extends Base {
       case "overdue":
         // A phone has no hover: the list name is written next to the date.
         return row(
-          "warning",
-          "mdi:alert-circle-outline",
+          (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${notice.since}T00:00:00Z`)) / 86400000 >= 7 ? "warning" : "neutral",
+          "mdi:checkbox-blank-circle-outline",
           t("overdue"),
           String(notice.title),
           [
