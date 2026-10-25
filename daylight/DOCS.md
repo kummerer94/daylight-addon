@@ -7,7 +7,7 @@ Home Assistant calls add-ons "apps" since version 2026.2. This app is an add-on 
 ## Install
 
 1. To move existing PC data, first download its backup (see "Move the data from the PC").
-2. In Home Assistant, open **Settings → Apps → App store**.
+2. In Home Assistant, open **Home Assistant Settings → Apps → App store**.
 3. Open the menu (three dots) and select **Registries**. Add registry **ghcr.io**, username **kummerer94**, and a GitHub **personal access token (classic)** as the password. Give the token only **read:packages**, with no repository scope. The image is private. Save these credentials once; replace the password here when the token expires or is revoked. Create the token at https://github.com/settings/tokens/new?scopes=read:packages.
 4. In the same app store menu, select **Repositories** and add `https://github.com/kummerer94/daylight-addon`. This repository is public and needs no token.
 5. Find **Daylight** in the app store and select **Install**. Home Assistant downloads the prebuilt image for your device. It does not build or compile anything on the Raspberry Pi.
@@ -117,7 +117,7 @@ When your Fastmail **Access level** is **Ask before changes**, Daylight can list
 Daylight can send notifications through the Home Assistant Companion app. Browser push also works in the installed HTTPS iPhone app on iOS 16.4 or later; see the setup above. Plain http cannot use browser push.
 
 1. Install the **Home Assistant** app on your phone or tablet and sign in with your own Home Assistant user. Home Assistant then has a `notify.mobile_app_<device>` service for that device.
-2. Allow notifications for the Home Assistant app in the phone's settings (iPhone: **Settings → Notifications → Home Assistant**). Without this permission, nothing arrives.
+2. Allow notifications for the Home Assistant app in the phone's settings (iPhone: **iPhone Settings → Notifications → Home Assistant**). Without this permission, nothing arrives.
 3. In Daylight, open **Settings → You → Send to my phone through Home Assistant**. Tick your own devices. Each person chooses their own devices.
 4. Select **Send test notification**.
 
@@ -137,7 +137,7 @@ Set it up once:
 1. Install [HACS](https://www.hacs.xyz/docs/use/) if it is not already installed. Keep the Daylight app running with **Show in sidebar** on.
 2. Open **HACS → ⋮ → Custom repositories**. Add `https://github.com/kummerer94/daylight-addon`, choose type **Dashboard**, and select **Add**.
 3. Find **Daylight card** in HACS and select **Download**. HACS adds the resource automatically: `/hacsfiles/daylight-addon/daylight-card.js`, type **JavaScript module**. Reload the dashboard when prompted. If you manage resources in YAML, add that URL with `type: module` yourself.
-4. If you used the old app-installed card, remove its `/local/daylight/daylight-card.js` resource under **Settings → Dashboards → ⋮ → Resources**. Load only the HACS resource, then reload the page. Existing card YAML still works.
+4. If you used the old app-installed card, remove its `/local/daylight/daylight-card.js` resource under **Home Assistant Settings → Dashboards → ⋮ → Resources**. Load only the HACS resource, then reload the page. Existing card YAML still works.
 5. On a dashboard, select **Edit dashboard → Add card → Manual** and paste:
 
    ```yaml
