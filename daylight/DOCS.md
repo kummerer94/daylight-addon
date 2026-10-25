@@ -271,7 +271,11 @@ Groceries can stay the same as one Apple Reminders list, so Siri and the Reminde
 3. Select **Choose a list**, choose the to-do list, for example `todo.<account>_einkauf`, and select **Preview**.
 4. Check the preview. Apple reminders become Daylight items, unless you match them with an existing item. Items with the same name are not matched by themselves. Existing Daylight items stay only in Daylight unless you tick them. Select **Connect**.
 
-Daylight then adds, renames, edits notes, completes, reopens and deletes the linked items in Apple Reminders. New items from the iPhone or Watch arrive after some minutes, because Home Assistant checks iCloud every five minutes. They show **via Apple Reminders**. Sections, order, photos and who is assigned stay only in Daylight. Use **Sections** on the Groceries list to sort items. Due dates in Apple Reminders stay as they are.
+Daylight then adds, renames, edits notes, completes and reopens linked items in Apple Reminders. Deleting a linked grocery or moving it out of Groceries marks its Apple reminder done. New items from the iPhone or Watch arrive after some minutes, because Home Assistant checks iCloud every five minutes. They show **via Apple Reminders**. Sections, order, photos and who is assigned stay only in Daylight. Due dates in Apple Reminders stay as they are.
+
+Groceries starts with ten editable sections. Daylight sorts unfamiliar names in the background and remembers the results. Your manual section choice is remembered for the same name and takes priority. Choose **Section** in an item's details to correct it. Without a model login, manual sections still work. Adding and checking off never wait for sorting.
+
+Choose **Aldi** or **Lidl** above the Groceries add field to follow that shop's section order, or **No grouping** for one list in the order added. Each device remembers its own choice, with no server write. Both shops use the same sections and item placements. **Other** stays last before the basket. Open **Sections** to add, rename or remove shops and sections, and change each shop's order with the arrows. Existing custom sections keep their original order in both seeded shops. Shop walks vary between stores, so adjust these orders to your local branches.
 
 Each item shows when a change waits, failed, is uncertain, or kept the Apple version because both sides changed at the same time. Settings shows the last successful check and the items that need a decision. **Disconnect** stops all waiting and future changes. Items and history stay in Daylight.
 
