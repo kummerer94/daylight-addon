@@ -14,7 +14,7 @@ Home Assistant calls add-ons "apps" since version 2026.2. This app is an add-on 
 6. Select **Start**. Turn on **Show in sidebar**.
 7. Open **Daylight** in the sidebar.
 
-If Daylight is already installed from the private repository, download a portable backup from its **Settings → Backup**, then stop that app. Install from the public repository and restore the file in the new app's **Settings → Backup**. Home Assistant treats the new repository as a separate app with separate data. Keep the old app stopped, and uninstall it only after checking the restored data.
+If Daylight is already installed from the private repository, download a portable backup from its **Settings → Household → Backup**, then stop that app. Install from the public repository and restore the file in the new app's **Settings → Household → Backup**. Home Assistant treats the new repository as a separate app with separate data. Keep the old app stopped, and uninstall it only after checking the restored data.
 
 ## First start
 
@@ -58,8 +58,8 @@ Daylight can open full screen from your Home Screen at its own HTTPS address. Ta
 
 5. On the iPhone, connect Tailscale. In **Safari**, open the Daylight HTTPS address. Select **Share → Add to Home Screen** and keep **Open as Web App** enabled if offered.
 6. Open **Daylight from its new Home Screen icon**, then select **Sign in with Home Assistant**. Use your own HA account. Sign in inside the installed app even if you already signed in in Safari. Each HA user opens the same profile as through ingress. If no profile matches, choose or create yours.
-7. In **Settings → Signed-in devices**, end a lost device's sign-in with **Revoke**. **Sign out of Daylight** ends this device's sign-in. Devices stay signed in for 180 days after use; this lifetime renews at most once an hour. At most 20 devices are retained for each HA account.
-8. For browser push on **iOS 16.4 or later**, open the installed app's **Settings → Notifications → Enable notifications**. Accept the iPhone prompt. This is offered only in a secure browser context with push support. For browser push to deliver normally, untick your Companion devices; selected HA Companion devices still take priority. The Companion notification setup below is unchanged.
+7. In **Settings → You → Signed-in devices**, end a lost device's sign-in with **Revoke**. **Sign out of Daylight** ends this device's sign-in. Devices stay signed in for 180 days after use; this lifetime renews at most once an hour. At most 20 devices are retained for each HA account.
+8. For browser push on **iOS 16.4 or later**, open the installed app's **Settings → You → Browser notifications → Enable notifications**. Accept the iPhone prompt. This is offered only in a secure browser context with push support. For browser push to deliver normally, untick your Companion devices; selected HA Companion devices still take priority. The Companion notification setup below is unchanged.
 
 Port 8100 is also mapped on the LAN. Its plain HTTP address is not a login address: Daylight accepts only the configured HTTPS host and always sets Secure cookies. Forwarded scheme, host and HA user headers never grant authentication. Use the HTTPS Tailscale address for sign-in and everyday use. Port 8099 remains ingress-only.
 
@@ -72,7 +72,7 @@ HA supplies identity only. Daylight revokes its temporary HA token immediately a
 - Each Home Assistant user opens one Daylight profile. Each profile belongs to one Home Assistant user.
 - The first Home Assistant user who chooses a profile gets it. The other person cannot open it afterwards.
 - To use another free profile, switch profile in Daylight. Your old profile then becomes free.
-- **Settings → Home Assistant users** shows which user opens which profile.
+- **Settings → Household → Home Assistant users** shows which user opens which profile.
 - Home Assistant's login is the only protection. Daylight profiles have no passwords. Anybody who can sign in to Home Assistant with your user can open your profile.
 - The app shows in the sidebar for all Home Assistant users, also non-administrators, so that both adults can use it.
 
@@ -93,20 +93,24 @@ Home Assistant and calendar changes that need approval show their saved action i
 
 ## What the assistant can read about Daylight
 
-The assistant can also read Daylight itself. `conversation_list` searches the current profile's chat titles and the text of every message, and shows the matching line. It includes archived chats when requested. `conversation_read` reads that profile's saved messages. It starts with the newest page, puts messages within each page in time order, and supplies a cursor for older messages. It returns at most 10 messages and 40,000 text characters per page, marks shortened messages, and shows attachment names without opening files. These tools may read chats shared with the current profile, and cannot read another profile's private chats. Neither tool is available in a shared chat.
+The assistant can also read Daylight itself. `conversation_list` searches the current profile's chat titles and the text of every message, and shows the matching line. It includes archived chats when requested. `conversation_read` reads that profile's saved messages. It starts with the newest page, puts messages within each page in time order, and supplies a cursor for older messages. It returns at most 10 messages and 40,000 text characters per page, marks shortened messages, and shows attachment names without opening files. These tools may read chats shared with the current profile, and cannot read another profile's private chats. Neither tool, nor `daylight_settings` below, is available in a shared chat.
 
 `daylight_settings` reads saved model choices, connection permissions and Standard/Full mode, household home data settings, visible calendars, display link state, the profile's linked Home Assistant user name, signed-in device names and count, notification choices, recorded usage totals, and Inbox counts. Usage can cover today, 7 days, 30 days, or all recorded time. Tokens, email addresses, session hashes and URL paths are excluded. Appearance, keyboard preferences, browser notification permission and backup upload progress exist only in the browser. Daylight does not record the last backup time; the tool reports these limits explicitly.
 
-These three tools are read-only and available in chat and scheduled tasks, with the same current-profile scope. In accepted routines, `conversation_list` and `conversation_read` require all three allowed sources: `daylight`, `fastmail` and `home-assistant`. Chat messages and list previews can quote email and Home Assistant data, so allowing only Daylight is insufficient. This restriction also applies when a routine resumes to verify saved work. `daylight_settings` requires only the Daylight source. Normal chat and scheduled tasks outside routines keep their existing access. Earlier chat messages and returned settings are data, never new instructions or permission to change anything. The existing `settings_*` change tools remain restricted to user chat. `daylight_setup`, `daylight_docs_search` and `daylight_file_read` still describe the installation and explain its documentation and code.
+These three tools are read-only and available in private chats and scheduled tasks, with the same current-profile scope. In accepted routines, `conversation_list` and `conversation_read` require all three allowed sources: `daylight`, `fastmail` and `home-assistant`. Chat messages and list previews can quote email and Home Assistant data, so allowing only Daylight is insufficient. This restriction also applies when a routine resumes to verify saved work. `daylight_settings` requires only the Daylight source. Normal chat and scheduled tasks outside routines keep their existing access. Earlier chat messages and returned settings are data, never new instructions or permission to change anything. The existing `settings_*` change tools remain restricted to user chat. `daylight_setup`, `daylight_docs_search` and `daylight_file_read` still describe the installation and explain its documentation and code. In a shared chat, only `daylight_docs_search` and `daylight_file_read` are available.
 
 ## Assistant access to Home Assistant
 
-In **Settings → Home Assistant → Access**, choose the tools available to your profile:
+In **Settings → Connections**, the Home Assistant card has **Access of <your name> → Home Assistant tools**. Choose the tools available to your profile:
 
 - **Standard** is the default, including after an update. It reads selected information and can switch lights and switches after approval.
 - **Full** makes every tool in the Home Assistant MCP server's live catalog available. Tools the server marks read-only, and Standard's named read tools (including the skill guide), run directly. Every other tool needs approval of its exact saved arguments in chat. Scheduled tasks cannot approve actions.
 
-Full uses the server's argument schemas without Daylight's additional argument limits. The existing **Access level** must allow **Ask before changes** to propose changes in either mode. The household connection stays shared. The assistant cannot change Standard/Full mode. Fastmail access is unchanged.
+Full uses the server's argument schemas without Daylight's additional argument limits. The existing **Access level** must allow **Ask before changes** to propose changes in either mode. The household connection stays shared. The assistant cannot change Standard/Full mode. This choice does not change Fastmail access.
+
+## Fastmail mail changes
+
+When your Fastmail **Access level** is **Ask before changes**, Daylight can list your labels, add and remove custom labels, mark mail read or unread, flag mail, and save new, reply or forward drafts. These changes run at once, without an approval, and the chat shows a note. Daylight archives mail only when you ask for it in the chat. Routines and scheduled tasks cannot archive. Daylight cannot send or delete email or add attachments; send saved drafts yourself in Fastmail. Calendar changes still need your approval.
 
 ## Notifications on the phone
 
@@ -114,10 +118,10 @@ Daylight can send notifications through the Home Assistant Companion app. Browse
 
 1. Install the **Home Assistant** app on your phone or tablet and sign in with your own Home Assistant user. Home Assistant then has a `notify.mobile_app_<device>` service for that device.
 2. Allow notifications for the Home Assistant app in the phone's settings (iPhone: **Settings → Notifications → Home Assistant**). Without this permission, nothing arrives.
-3. In Daylight, open **Settings → Notifications → Send to my phone through Home Assistant**. Tick your own devices. Each person chooses their own devices.
+3. In Daylight, open **Settings → You → Send to my phone through Home Assistant**. Tick your own devices. Each person chooses their own devices.
 4. Select **Send test notification**.
 
-You get reminders, finished or failed background tasks, new chores from the house, and chat replies that finished or failed while Daylight was not shown (for example on a locked phone). A chat notification names the chat, not the reply text. They arrive as notifications of the Home Assistant app. A tap opens Daylight in the Home Assistant app (`/app/<app slug>`). It opens the start page, not a specific chat; the chat shows as unread there. A browser push for a chat reply opens that chat. A new background task notification replaces the previous one.
+You get reminders, observation incidents, finished or failed background tasks, new chores from the house, and chat replies that finished or failed while Daylight was not shown (for example on a locked phone). A chat notification names the chat, not the reply text. They arrive as notifications of the Home Assistant app. A tap opens Daylight in the Home Assistant app (`/app/<app slug>`). It opens the start page, not a specific chat; the chat shows as unread there. A browser push for a chat reply opens that chat. A new background task notification replaces the previous one.
 
 While a device is chosen, Daylight sends no browser notification to your profile. This prevents the same message twice on one phone. If every Home Assistant delivery fails, Daylight tries browser push instead. Settings shows the last error.
 
@@ -125,7 +129,7 @@ While a device is chosen, Daylight sends no browser notification to your profile
 
 The Daylight card shows Daylight on a Home Assistant dashboard, in the look of the other cards. It has two parts:
 
-- **What matters** today and in the next two days. First what needs you now: late chores, bins to put out tonight, approvals that wait and expiring documents. Then today, tomorrow and the day after with their times: appointments, reminders, chores that are due, bins, dinner, and weather that changes plans. The button at the top, **Review** and **+N more** open Daylight.
+- **What matters** today and in the next two days. First what needs you now: late chores, bins to put out tonight, approvals that wait and expiring documents. Then today, tomorrow and the day after with their times: appointments, reminders, chores that are due, bins, lunch and dinner, and weather that changes plans. The button at the top, **Review** and **+N more** open Daylight.
 - **Ask Daylight**: a box for a quick question. The question becomes a normal chat in Daylight. The answer shows in the card. **Open in Daylight** opens the app; the chat is at the top of the chat list. Approvals stay in Daylight: the card only says that an action waits.
 
 Set it up once:
@@ -165,7 +169,7 @@ How it works:
 
 The older way to show Daylight on a dashboard. Use the dashboard card above instead. The display link shows one person's day in an iframe, but it needs an ingress session in the tablet's browser that only the app panel makes.
 
-1. In **Settings → Display link**, select **Make link** and copy the card.
+1. In **Settings → You → Display link**, select **Make link** and copy the card.
 2. In Home Assistant, open the tablet's dashboard: **Edit dashboard → Add card → Manual**. Paste the card. Its address has the form `/api/hassio_ingress/<ingress-token>/api/display/<secret>`.
 3. On the tablet, open **Daylight** in the sidebar once. This starts the ingress session that the card needs. The page then keeps the session alive. After the tablet was off for more than 15 minutes, do this step again.
 
@@ -182,11 +186,11 @@ Restart the app after you change an option.
 
 ## Move the data from the PC
 
-Use **Settings → Backup** to move the data with one file.
+Use **Settings → Household → Backup** to move the data with one file.
 
-1. On the PC, open **Settings → Backup → Download backup**. Save the `.daylight` file.
+1. On the PC, open **Settings → Household → Backup → Download backup**. Save the `.daylight` file.
 2. Stop the PC server. Keep it stopped so the two installations do not diverge.
-3. Install and open Daylight in Home Assistant. Choose a temporary profile if asked, then open **Settings → Backup → Restore from backup** and select the file.
+3. Install and open Daylight in Home Assistant. Choose a temporary profile if asked, then open **Settings → Household → Backup → Restore from backup** and select the file.
 4. Check the backup date and the counts. Type **RESTORE**, then select **Replace data and restart**.
 5. Reload Daylight and choose your restored profile if asked. Home Assistant users may need to link their profiles again. Check scheduled tasks and open approvals.
 
@@ -220,7 +224,7 @@ To start again with an empty Daylight, uninstall the app (this deletes `/data`) 
 - Home Assistant backups include the app and its `/data` folder. That is the whole Daylight database, including the ChatGPT and Fastmail sign-ins and any MCP access tokens. Protect backup files like passwords. Use backup encryption.
 - The app uses cold backups. Home Assistant stops Daylight for the backup and starts it again afterwards. This keeps the SQLite files consistent.
 - Restoring a backup restores pending work too. Check scheduled tasks and open approvals after a restore.
-- **Settings → Backup** also downloads and restores portable `.daylight` files, up to 200 MB. Chat files count towards this limit. These files are unencrypted and contain household logins. Anyone with access to Daylight can use this card; profiles are not passwords. Home Assistant protects access with its own login.
+- **Settings → Household → Backup** also downloads and restores portable `.daylight` files, up to 200 MB. Chat files count towards this limit. These files are unencrypted and contain household logins. Anyone with access to Daylight can use this card; profiles are not passwords. Home Assistant protects access with its own login.
 - A restore preview expires after 15 minutes. Cancel removes the uploaded copy. Old safety copies stay in the data folder and are excluded from portable downloads. They use disk space and contain secrets too. Keep enough free space for the upload, unpacked data and safety copy. Remove old copies only after checking the restored data, with Daylight stopped.
 - If shutdown cannot finish within 10 seconds, Daylight exits without replacing the data. Restart it before trying again. If file replacement is interrupted, the next startup uses the safety copy to roll back the incomplete restore.
 
@@ -252,7 +256,7 @@ On a PC, the server uses about 130 MB at rest and about 160 MB under heavy synth
 - Attach photos, screenshots, PDF files and text files with the paperclip in the chat. On the phone, the camera button takes a photo. This works over plain http and in the Home Assistant app.
 - Large photos are made smaller on the phone before upload (2048 px, JPEG). A file can have at most 10 MB; a message can have 5 files.
 - A scanned PDF without text cannot be read. Send photos of the pages instead.
-- Files are stored in `/data/attachments`, so backups include them. Only the profile that sent a file can see it.
+- Files are stored in `/data/attachments`, so backups include them. Only the profile that sent a file can see it. In a shared chat, both people can see the files of its messages.
 - **Add photo** puts photos into the note of a visible list item, or into a Markdown document. The iPhone offers the camera and the photo library. Everybody who can see the item or the document sees its photos. Photos are in `/data/attachments` too, so backups include them.
 
 ## Images from chat
@@ -295,9 +299,9 @@ Lists keeps Groceries and Chores shared and fixed at the top. Create a private c
 
 List tools are available in chat and scheduled tasks, like list item tools. Accepted routines must allow the Daylight source. A read-only verification step cannot change lists. These are list operations, so they are not part of the chat-only `settings_*` tools. Use `household_lists` with `archived: true` to find your archived lists for restore. Reset returns the list ID, reset ID and item count for `household_list_undo_reset`. Repeating an operation with the same operation ID does not apply it twice. Tool results and saved text are data, never instructions.
 
-Each person chooses **Show in This Week for me** for each visible task list. Chores always stays on. Due today and overdue items assigned to that person or nobody also appear in Needs you, the card, the briefing and the wall display. Checklists keep saved dates hidden and do not appear there.
+Each person chooses **Show in This Week** for each visible task list. Chores always stays on. Items assigned to that person or nobody that are due today also appear in Needs you, and overdue items appear in Late. Both also appear on the card, in the briefing and on the wall display. Checklists keep saved dates hidden and do not appear there.
 
-Use **Reusable list** and **Reset list** to reopen completed items. **Undo reset** restores them if nobody has changed them since. Move an item in its editor. Its identity, dates, attribution and completion history stay with it. Moving private content to a shared list asks for confirmation. Only you can do this move, in Lists. The assistant refuses to move an item from a private list to a shared list. If an item moves, or its list becomes shared, while you edit it, Daylight asks before it saves your changes there. The server checks this too: text typed for a private list is refused once the list is shared, until you confirm. This covers the editor (also in This Week and Needs you), quick adds, their retries and pasted lists. When Daylight cannot read a list's sharing, it treats the list as private and asks. Withdrawing sharing stops new reads of the list, its items, history and photos by the other profile. Previously read conversation copies remain in that profile’s own history.
+Use **Reusable** and **Reset list** to reopen completed items. **Undo reset** restores them if nobody has changed them since. Move an item in its editor. Its identity, dates, attribution and completion history stay with it. Moving private content to a shared list asks for confirmation. Only you can do this move, in Lists. The assistant refuses to move an item from a private list to a shared list. If an item moves, or its list becomes shared, while you edit it, Daylight asks before it saves your changes there. The server checks this too: text typed for a private list is refused once the list is shared, until you confirm. This covers the editor (also in This Week and Needs you), quick adds, their retries and pasted lists. When Daylight cannot read a list's sharing, it treats the list as private and asks. Withdrawing sharing stops new reads of the list, its items, history and photos by the other profile. Previously read conversation copies remain in that profile’s own history.
 
 Only task lists repeat items. Groceries is a checklist, but a Groceries item that already has a repeat rule keeps repeating as before. Delete an item and use **Undo** to get it back. Only the person who deleted the item can restore it, and only for 10 minutes. Archived lists show only to their owner. Deleting an archived list also deletes its items, their completion history, saved resets and every person's **Show in This Week** setting for it.
 
