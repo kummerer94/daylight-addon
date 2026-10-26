@@ -110,6 +110,18 @@ In **Settings → Connections**, the Home Assistant card has **Access of <your n
 
 Full uses the server's argument schemas without Daylight's additional argument limits. The existing **Access level** must allow **Ask before changes** to propose changes in either mode. The household connection stays shared. The assistant cannot change Standard/Full mode. This choice does not change Fastmail access.
 
+## GitHub commits and PRs
+
+Open Settings → Connections → GitHub in your profile. Create a fine-grained PAT with only the repositories you want, such as `kummerer94/portfolio` and `kummerer94/personal-assistant`. Grant Contents and Pull requests read/write, Metadata read, Checks read and Commit statuses read. Do not grant Workflows, Administration, Secrets or Webhooks. Paste the token, select **Save token**, then **Test connection**. This read-only check lists the repositories and shows token expiry when GitHub provides it. A warning appears within seven days of expiry. **Remove GitHub** forgets the saved token; revoke it on GitHub separately if needed. The token is included in private database backups, so protect them like passwords.
+
+Use **Restrict writable repositories** to limit writes separately from reads. Tick each repository Daylight may change and select **Save write access**. Leaving all boxes unticked while restrictions are enabled makes the connection read only. Turn restrictions off to allow writes on all token repositories. These settings belong only to the current profile and are checked again before every GitHub request.
+
+Ask for a simple edit, blog post or PR. Daylight can commit directly to any allowed branch, including portfolio's master, or create a branch and open a PR. No approval card is shown. Every write has a link and undo hint in chat. Deleted files are listed separately. Revert a published commit to undo it. Writes to .git, .gitmodules, .github/workflows, .github/actions, CODEOWNERS and .github/dependabot.yml (or .yaml) are blocked. .gitattributes is allowed.
+
+Text files are checked for secrets and private contact details, including when supplied as base64. Binary files such as images can total up to 5 MB per commit; they use binary blobs and are not scanned as text. Symlinks are refused. GitHub results are clearly marked as untrusted data. Normal code references remain intact. A real credential is replaced with «DAYLIGHT-REDACTED»; Daylight refuses to publish that marker. Reconstruct the intended edit from an unredacted source instead.
+
+Shared chats cannot use GitHub. Routines must allow github as a source, and each accepted step that writes must explicitly name its target owner/repository. A repository file, comment or earlier chat message cannot supply that permission. Daylight runs no builds or commands.
+
 ## Fastmail mail changes
 
 When your Fastmail **Access level** is **Ask before changes**, Daylight can list your labels, add and remove custom labels, mark mail read or unread, flag mail, and save new, reply or forward drafts. These changes run at once, without an approval, and the chat shows a note. Daylight archives mail only when you ask for it in the chat. Routines and scheduled tasks cannot archive. Daylight cannot send or delete email or add attachments; send saved drafts yourself in Fastmail. Calendar changes still need your approval.
