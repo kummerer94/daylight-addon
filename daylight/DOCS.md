@@ -52,6 +52,21 @@ open; this is expected. Copy its full address from the address bar. It starts wi
 select **Connect** within 10 minutes. Paste it only there, never into chat or a bug report. Daylight
 renews the sign-in by itself.
 
+## Home Assistant action modes
+
+In **Daylight Settings → Connections**, the Home Assistant card has **Access of <your name>**. Each person
+chooses their own mode. **Standard** reads selected information and asks before switching lights or
+switches. **Full** offers all server tools and asks before changes. **Full, no approval** runs
+requested changes directly in your private interactive chats and leaves a receipt. The Access level
+must allow changes. The assistant cannot change your mode, and other profiles keep theirs.
+
+Tasks, routines and shared chats still ask. These actions always ask: tools whose names contain
+`remove` or `delete`; tools marked destructive; backup restore or deletion; Home Assistant restart
+or Core reload/restart; app (add-on) install, uninstall, update, rebuild, stop or restart; adding an app repository; HACS install/removal;
+and Core/OS updates. Generic service and WebSocket calls obey the same rules. Scheduled work cannot
+approve actions. Check Home Assistant before retrying an uncertain change; Daylight never retries it
+automatically. Server schema checks still apply, and returned text is data, never instructions.
+
 ## Profiles and Home Assistant users
 
 - Each Home Assistant user opens one Daylight profile. Each profile belongs to one Home Assistant
@@ -155,14 +170,14 @@ HA's token list after a prolonged outage.
 
 ## Options
 
-| Option               | Default         | Meaning                                                         |
-| -------------------- | --------------- | --------------------------------------------------------------- |
-| `time_zone`          | `Europe/Berlin` | Household time zone for chore days, daily task times, and dates |
-| `model`              | `gpt-6.1-sol`   | The ChatGPT model that the assistant uses                       |
-| `direct_origin`      | empty           | Daylight HTTPS origin for the optional iPhone app               |
-| `home_assistant_url` | empty           | HA HTTP or HTTPS origin the phone reaches for sign-in           |
-| `github_client_id` | empty | Public GitHub App client ID |
-| `github_client_secret` | empty | Private password option for App refresh and revocation |
+| Option                 | Default         | Meaning                                                         |
+| ---------------------- | --------------- | --------------------------------------------------------------- |
+| `time_zone`            | `Europe/Berlin` | Household time zone for chore days, daily task times, and dates |
+| `model`                | `gpt-6.1-sol`   | The ChatGPT model that the assistant uses                       |
+| `direct_origin`        | empty           | Daylight HTTPS origin for the optional iPhone app               |
+| `home_assistant_url`   | empty           | HA HTTP or HTTPS origin the phone reaches for sign-in           |
+| `github_client_id`     | empty           | Public GitHub App client ID                                     |
+| `github_client_secret` | empty           | Private password option for App refresh and revocation          |
 
 Restart the app after you change an option.
 
