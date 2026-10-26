@@ -161,6 +161,8 @@ HA's token list after a prolonged outage.
 | `model`              | `gpt-6.1-sol`   | The ChatGPT model that the assistant uses                       |
 | `direct_origin`      | empty           | Daylight HTTPS origin for the optional iPhone app               |
 | `home_assistant_url` | empty           | HA HTTP or HTTPS origin the phone reaches for sign-in           |
+| `github_client_id` | empty | Public GitHub App client ID |
+| `github_client_secret` | empty | Private password option for App refresh and revocation |
 
 Restart the app after you change an option.
 
@@ -228,15 +230,33 @@ repositories you want. Grant Contents and Pull requests read/write, Metadata rea
 Commit statuses read. Do not grant Workflows, Administration, Secrets or Webhooks. Select
 **Save token**, then **Test connection**.
 
+Alternatively, register a GitHub App in **GitHub Settings → Developer settings → GitHub Apps**.
+Disable webhooks, leave the optional callback URL empty, keep installation-time OAuth authorization
+off, and enable **Device flow** with user token expiration. Use the repository permissions listed
+above and install it on **Only select repositories**. No App private key is needed. Put its
+**Client ID** and a generated client secret in Daylight's `github_client_id` and
+`github_client_secret` options, then restart Daylight. Keep the secret out of repositories and chat.
+In your Daylight profile, choose **GitHub App (sign in)** and **Sign in to GitHub**. Open
+https://github.com/login/device, enter the displayed code, authorize the App and keep Settings open
+until sign-in finishes. Select **Test connection**. This works through ingress and direct HTTPS
+without a callback. App tokens refresh automatically on use.
+
+Switching login methods retains the inactive credential and your write restrictions. App removal
+attempts token revocation before deleting the local login. If it fails, retry removal or revoke the
+App under **GitHub Settings → Applications → Authorized GitHub Apps**, then use **Forget App login
+locally**. That recovery control appears only after a recorded revocation failure. Revoking the
+whole App authorization can affect other profiles using the same GitHub account and App.
+
 GitHub belongs to your profile and is unavailable in shared chats. Allowed commits, branches and PRs
 run directly without an approval card. Use **Restrict writable repositories** and
 **Save write access** to limit writes; an empty restricted selection allows reads only. Workflow and
 review-policy files and destructive operations are blocked. Receipts link to completed changes; undo
 a published commit with a new revert commit. Daylight runs no local commands or builds.
 
-The token is included in private database backups. **Remove GitHub** forgets it; revoke it on GitHub
-separately if needed. Ask Daylight about its GitHub tools for the bundled setup guide, limits and
-scan rules. Never paste the token into chat.
+Private backups include PATs, App tokens and pending revocations. Protect them like passwords.
+Restoring an old App login may require signing in again because refresh tokens rotate.
+**Remove GitHub** forgets a PAT locally; revoke it on GitHub separately if needed. Ask Daylight about
+its GitHub tools for the bundled setup guide, limits and scan rules. Never paste the token into chat.
 
 ## Find more help
 

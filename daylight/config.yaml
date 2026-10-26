@@ -1,5 +1,5 @@
 name: Daylight
-version: "0.32.1"
+version: "0.33.0"
 slug: daylight
 description: Household assistant for two adults - chores, groceries, documents and chat.
 url: https://github.com/kummerer94/daylight-addon
@@ -45,9 +45,13 @@ options:
   model: gpt-6.1-sol
   direct_origin: ""
   home_assistant_url: ""
+  github_client_id: ""
+  github_client_secret: ""
 schema:
   time_zone: str
   model: match(^[A-Za-z0-9._:/-]{1,160}$)
   direct_origin: str
   home_assistant_url: str
+  github_client_id: str
+  github_client_secret: password
 image: ghcr.io/kummerer94/daylight
