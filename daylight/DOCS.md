@@ -225,23 +225,26 @@ Download a backup first if you want to keep your data. Uninstall the Daylight ap
 
 ## Optional GitHub connection
 
-Open **Settings → Connections**, then **GitHub**. Save a fine-grained personal access token for only the
-repositories you want. Grant Contents and Pull requests read/write, Metadata read, Checks read and
-Commit statuses read. Do not grant Workflows, Administration, Secrets or Webhooks. Select
-**Save token**, then **Test connection**.
-
-Alternatively, register a GitHub App in **GitHub Settings → Developer settings → GitHub Apps**.
+GitHub App sign-in is the only way to connect GitHub. Register an App in
+**GitHub Settings → Developer settings → GitHub Apps**. Grant Contents and Pull requests read/write,
+Metadata read, Checks read and Commit statuses read. Do not grant Workflows, Administration,
+Secrets or Webhooks.
 Disable webhooks, leave the optional callback URL empty, keep installation-time OAuth authorization
 off, and enable **Device flow** with user token expiration. Use the repository permissions listed
 above and install it on **Only select repositories**. No App private key is needed. Put its
 **Client ID** and a generated client secret in Daylight's `github_client_id` and
 `github_client_secret` options, then restart Daylight. Keep the secret out of repositories and chat.
-In your Daylight profile, choose **GitHub App (sign in)** and **Sign in to GitHub**. Open
+In your Daylight profile, open **Settings → Connections**, then **GitHub** and choose **Sign in to GitHub**. Open
 https://github.com/login/device, enter the displayed code, authorize the App and keep Settings open
 until sign-in finishes. Select **Test connection**. This works through ingress and direct HTTPS
 without a callback. App tokens refresh automatically on use.
 
-Switching login methods retains the inactive credential and your write restrictions. App removal
+Both `github_client_id` and `github_client_secret` are required; without them Settings explains
+what to configure. Existing personal access tokens are deleted on startup, including inactive ones.
+Their profiles see a notice until dismissed and can sign in with the App. App credentials and
+repository write restrictions stay unchanged. Revoke old tokens separately on GitHub if needed.
+
+App removal
 attempts token revocation before deleting the local login. If it fails, retry removal or revoke the
 App under **GitHub Settings → Applications → Authorized GitHub Apps**, then use **Forget App login
 locally**. That recovery control appears only after a recorded revocation failure. Revoking the
@@ -253,10 +256,10 @@ run directly without an approval card. Use **Restrict writable repositories** an
 review-policy files and destructive operations are blocked. Receipts link to completed changes; undo
 a published commit with a new revert commit. Daylight runs no local commands or builds.
 
-Private backups include PATs, App tokens and pending revocations. Protect them like passwords.
-Restoring an old App login may require signing in again because refresh tokens rotate.
-**Remove GitHub** forgets a PAT locally; revoke it on GitHub separately if needed. Ask Daylight about
-its GitHub tools for the bundled setup guide, limits and scan rules. Never paste the token into chat.
+Private backups include App tokens and pending revocations. Protect them like passwords. Older
+backups may still contain personal access tokens; startup removes those tokens again after restore.
+Restoring an old App login may require signing in again because refresh tokens rotate. Ask Daylight
+about its GitHub tools for the bundled setup guide, limits and scan rules. Never paste tokens into chat.
 
 ## Find more help
 
