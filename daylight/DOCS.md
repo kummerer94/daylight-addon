@@ -230,6 +230,21 @@ into `share/daylight-import`, then restart the app; `/data` must have no databas
 Download a backup first if you want to keep your data. Uninstall the Daylight app, which deletes
 `/data`, then install it again.
 
+## Connect Groceries or Chores to Apple Reminders
+
+Set up Home Assistant's iCloud integration with the Apple account that owns the list. In Daylight,
+open **Settings → Household** and choose **Connect Groceries to a Home Assistant list** or
+**Connect Chores to a Home Assistant list**. Each uses its own to-do entity. Choose a list, select
+**Preview**, match existing items, and tick Daylight items to export before selecting **Connect**.
+Equal names are never matched automatically. Other existing Daylight items stay local.
+
+Both lists sync text, notes and completion. Chores also syncs supported due dates and optional
+times in Home Assistant's time zone. Repeating chores keep one reminder with its next due date;
+repeat rules, assignments and photos stay in Daylight. Device chores sync too. Deleting or moving
+a linked item completes its reminder; Daylight never deletes Apple reminders. Custom lists never
+sync. Changes from Apple can take several minutes. Per-item badges and Settings show sync problems.
+**Disconnect** stops queued and future writes while keeping local items and history.
+
 ## Known limits
 
 - Installing and updating need internet access and valid ghcr.io registry credentials.
