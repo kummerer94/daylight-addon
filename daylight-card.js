@@ -35,7 +35,7 @@ export function cardAnswerText(text) {
 // Plain JavaScript without a build step. The helpers are exported for tests.
 
 // The public repository sync stamps this with the app manifest's version.
-const VERSION = "0.38.1";
+const VERSION = "0.39.0";
 // crypto.randomUUID exists only on HTTPS or localhost; Home Assistant often
 // runs on plain http on the home network.
 function randomId() {
@@ -750,7 +750,12 @@ export class DaylightCard extends Base {
     const locale = cardLocale(this._hass);
     if (typeof b.summary === "string" && b.summary)
       card.append(el("p", { className: "summary", textContent: b.summary }));
+    const late = board.attention
+      .filter((notice) => notice.kind === "overdue")
+      .sort((a, b) => String(a.since).localeCompare(String(b.since)));
+    let lateIndex = 0;
     const notices = board.attention
+      .map((notice) => notice.kind === "overdue" ? late[lateIndex++] : notice)
       .map((notice) => this._notice(notice, board.today, locale))
       .filter(Boolean);
     if (notices.length)
@@ -798,7 +803,7 @@ export class DaylightCard extends Base {
       case "overdue":
         // A phone has no hover: the list name is written next to the date.
         return row(
-          (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${notice.since}T00:00:00Z`)) / 86400000 >= 7 ? "warning" : "neutral",
+          "warning",
           "mdi:checkbox-blank-circle-outline",
           t("overdue"),
           String(notice.title),
