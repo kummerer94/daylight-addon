@@ -209,6 +209,11 @@ into `share/daylight-import`, then restart the app; `/data` must have no databas
 - Home Assistant backups include the app and its `/data` folder. That is the whole Daylight
   database, including the ChatGPT and Fastmail sign-ins and any MCP access tokens. Protect backup
   files like passwords. Use backup encryption.
+- `/data/diagnostics` holds private heap snapshots for memory-crash diagnosis. They can contain
+  personal data and credentials, and use about 250–300 MB each. Home Assistant backups include
+  them; portable `.daylight` downloads exclude them. They are never served by Daylight. You can
+  delete this folder locally, preferably with the app stopped; it is recreated at startup. The
+  launcher keeps only the newest snapshot before each start, and Node may write one more.
 - The app uses cold backups. Home Assistant stops Daylight for the backup and starts it again
   afterwards. This keeps the SQLite files consistent.
 - Restoring a backup restores pending work too. Check scheduled tasks and open approvals after a
