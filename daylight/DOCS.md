@@ -173,7 +173,7 @@ HA's token list after a prolonged outage.
 | Option                 | Default         | Meaning                                                         |
 | ---------------------- | --------------- | --------------------------------------------------------------- |
 | `time_zone`            | `Europe/Berlin` | Household time zone for chore days, daily and weekly task times, and dates |
-| `model`                | `gpt-6.1-sol`   | The ChatGPT model that the assistant uses                       |
+| `model`                | `gpt-6.2-sol`   | The ChatGPT model that the assistant uses                       |
 | `direct_origin`        | empty           | Daylight HTTPS origin for the optional iPhone app               |
 | `home_assistant_url`   | empty           | HA HTTP or HTTPS origin the phone reaches for sign-in           |
 | `github_client_id`     | empty           | Public GitHub App client ID                                     |
