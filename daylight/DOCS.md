@@ -178,8 +178,14 @@ HA's token list after a prolonged outage.
 | `home_assistant_url`   | empty           | HA HTTP or HTTPS origin the phone reaches for sign-in           |
 | `github_client_id`     | empty           | Public GitHub App client ID                                     |
 | `github_client_secret` | empty           | Private password option for App refresh and revocation          |
+| `obsidian_owner_profile` | empty         | Single profile allowed to search an Obsidian Sync vault (`local` for the original profile) |
 
 Restart the app after you change an option.
+
+To link a vault, run `docker exec -it <Daylight container> /usr/local/bin/daylight-obsidian-setup`
+in an authorized Home Assistant terminal and follow the prompts. An Obsidian Sync subscription is
+required. Restart Daylight after setup. The configured profile can then search Markdown notes in
+private chat. The app only downloads vault changes. Backups exclude the sync login and vault copy.
 
 ## Backups and moving data
 

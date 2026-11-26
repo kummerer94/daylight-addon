@@ -1,5 +1,5 @@
 name: Daylight
-version: "0.51.1"
+version: "0.52.0"
 slug: daylight
 description: Household assistant for two adults - chores, groceries, documents and chat.
 url: https://github.com/kummerer94/daylight-addon
@@ -29,6 +29,7 @@ timeout: 20
 backup: cold
 backup_exclude:
   - "*.log"
+  - "obsidian"
 # /share/daylight-import is read once to move data from the PC (see DOCS.md).
 map:
   - type: share
@@ -47,6 +48,7 @@ options:
   home_assistant_url: ""
   github_client_id: ""
   github_client_secret: ""
+  obsidian_owner_profile: ""
 schema:
   time_zone: str
   model: match(^[A-Za-z0-9._:/-]{1,160}$)
@@ -54,4 +56,5 @@ schema:
   home_assistant_url: str
   github_client_id: str
   github_client_secret: password
+  obsidian_owner_profile: str
 image: ghcr.io/kummerer94/daylight
